@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<widget id="isracard.widgets.twiliovideochat.TwilioVideoChat" pluginWidget="true" needsEntityContext="false" offlineCapable="false"
+        supportedPlatform="Web"
+        xmlns="http://www.mendix.com/widget/1.0/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.mendix.com/widget/1.0/ ../node_modules/mendix/custom_widget.xsd">
+    <name>Isracard Twilio Video Chat</name>
+    <description>Mendix widget for Twilio Video chats - Isracard modification</description>
+    <studioProCategory>Isracard Widgets</studioProCategory>
+    <icon>
+        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
+    </icon>
+    <properties>
+        <propertyGroup caption="Room joining">
+            <property key="roomNameExpr" type="expression">
+                <caption>Room name</caption>
+                <description>String expression</description>
+                <returnType type="String" />
+            </property>
+            <property key="nickNameExpr" type="expression">
+                <caption>Nick name</caption>
+                <description>String expression</description>
+                <returnType type="String" />
+            </property>
+            <property key="joinRoomActiveExpr" type="expression">
+                <caption>Join room</caption>
+                <description>Boolean expression</description>
+                <returnType type="Boolean" />
+            </property>
+            <property key="cameraEnabledExpr" type="expression" required="false">
+                <caption>Camera available</caption>
+                <description>When false, local video track will not be created when joining the room.</description>
+                <returnType type="Boolean" />
+            </property>
+
+            <property key="microphoneEnabledExpr" type="expression" required="false">
+                <caption>Microphone available</caption>
+                <description>When false, local audio track will not be created when joining the room.</description>
+                <returnType type="Boolean" />
+            </property>
+        </propertyGroup>
+        <propertyGroup caption="Authentication">
+            <property key="accessTokenExpr" type="expression" required="true">
+                <caption>Access Token</caption>
+                <description>Access Token. You can generate using our helper Java Action:
+                GenerateAccessToken in TwilioAccessTokenGenerator module.</description>
+                <returnType type="String" />
+            </property>
+        </propertyGroup>
+        <propertyGroup caption="Camera preview">
+            <property key="previewActiveExpr" type="expression">
+                <caption>Show camera preview</caption>
+                <description>Boolean expression</description>
+                <returnType type="Boolean" />
+            </property>
+            <property key="previewSelector" type="string" required="false">
+                <caption>Camera preview selector</caption>
+                <description>Optional CSS selector. If not empty, will redirect local camera preview into this element.
+                Otherwise, will render it into this widget content (div.local-media).</description>
+            </property>
+        </propertyGroup>
+        <propertyGroup caption="Events">
+            <property key="onConnectedAction" type="action" required="false">
+                <caption>On connected</caption>
+                <description>Executed after successfully joining the Twilio room.</description>
+            </property>
+
+            <property key="onDisconnectedAction" type="action" required="false">
+                <caption>On disconnected</caption>
+                <description>Executed after leaving the Twilio room.</description>
+            </property>
+
+            <property key="onErrorAction" type="action" required="false">
+                <caption>On error</caption>
+                <description>Executed when a Twilio connection or media error occurs.</description>
+            </property>
+        </propertyGroup>
+        <propertyGroup caption="Logging">
+            <property key="logActiveExpr" type="expression">
+                <caption>Logging is active</caption>
+                <description>Boolean expression</description>
+                <returnType type="Boolean" />
+            </property>
+            <property key="logSelector" type="string" required="false">
+                <caption>Log selector</caption>
+                <description>Optional CSS selector. If not empty, will log messages into this element.
+                Otherwise, will render it into this widget content (div.log).</description>
+            </property>
+        </propertyGroup>
+    </properties>
+</widget>
