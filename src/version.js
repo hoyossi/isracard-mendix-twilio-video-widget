@@ -1,4 +1,4 @@
-export const WIDGET_VERSION = "1.1.1";
+export const WIDGET_VERSION = "1.2.0";
 
 export const WIDGET_FEATURES = [
   "Generic Event Framework",

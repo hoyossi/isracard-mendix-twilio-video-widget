@@ -560,6 +560,7 @@ class TwilioVideoChat extends Component {
 
   render() {
     const showDiagnostics = this.props.showDiagnostics === true;
+    const showFeatureList = this.props.showFeatureList === true;
 
     return <div class="twilio-video">
         <div class="media remote-media"></div>
@@ -574,17 +575,19 @@ class TwilioVideoChat extends Component {
             <div>Connection state: {getConnectionState()}</div>
             <div>Twilio SDK: 2.1.0</div>
             <div>Browser: {getBrowserInfo()}</div>
-            <div>
-              Features:
-              <ul>
-                {WIDGET_FEATURES.map(function(feature) {
-                  return <li key={feature}>{feature}</li>;
-                })}
-              </ul>
-            </div>
           </div>
         )}
-    </div>;
+        {showFeatureList && (
+          <div className="twilio-diagnostics">
+            <div><strong>Supported Features</strong></div>
+
+            <ul>
+              {WIDGET_FEATURES.map(feature => (
+                <li key={feature}>{feature}</li>
+              ))}
+            </ul>
+          </div>
+        )}
   }
 }
 

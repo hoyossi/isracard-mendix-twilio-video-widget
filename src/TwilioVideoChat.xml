@@ -127,10 +127,34 @@
                 Otherwise, will render it into this widget content (div.log).</description>
             </property>
         </propertyGroup>
-        <propertyGroup caption="Diagnostics">
-            <property key="showDiagnostics" type="boolean" required="false" defaultValue="false">
-                <caption>Show diagnostics</caption>
-                <description>Shows widget version, runtime status, participant side and supported features.</description>
+        <propertyGroup caption="About / Diagnostics">
+                <property key="showDiagnostics" type="boolean" required="true" defaultValue="false">
+                    <caption>Show diagnostics panel</caption>
+                    <description>
+                        Shows widget version, Twilio SDK version, browser information and connection state.
+                    </description>
+                </property>
+
+                <property key="showFeatureList" type="boolean" required="true" defaultValue="false">
+                    <caption>Show feature list</caption>
+                    <description>
+                        Shows the list of enterprise features supported by this widget version.
+                    </description>
+                </property>
+
+            <property key="aboutWidgetVersion" type="string" required="true" defaultValue="1.1.1">
+                <caption>Widget version</caption>
+                <description>Current widget package version. Do not change manually.</description>
+            </property>
+
+            <property key="aboutTwilioSdkVersion" type="string" required="true" defaultValue="2.1.0">
+                <caption>Twilio Video SDK version</caption>
+                <description>Twilio Video JavaScript SDK version used by this widget.</description>
+            </property>
+
+            <property key="aboutFeatureList" type="string" required="true" defaultValue="Generic Event Framework; Device Validation; Connection Lifecycle Protection; Participant Tracking; Focus Monitoring; Production Diagnostics Panel">
+                <caption>Feature list</caption>
+                <description>Current supported enterprise features in this widget version.</description>
             </property>
         </propertyGroup>
     </properties>
