@@ -93,7 +93,7 @@
             </property>
         </propertyGroup>
         <propertyGroup caption="Generic event">
-            <property key="participantSide" type="enumeration" required="false" defaultValue="customer">
+            <property key="participantSide" type="enumeration" required="true" defaultValue="customer">
                 <caption>Participant side</caption>
                 <description>Defines whether this widget instance is used by customer or agent.</description>
                 <enumerationValues>
