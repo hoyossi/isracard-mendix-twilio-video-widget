@@ -3,6 +3,7 @@ import { hot } from "react-hot-loader/root";
 
 import "./ui/TwilioVideoChat.css";
 import { buildWidgetEvent, emitWidgetEvent } from "./services/eventLogger";
+import { performDeviceCheck } from "./services/deviceService";
 
 var Video = require('twilio-video');
 
@@ -73,7 +74,7 @@ function getBooleanProp(propName, defaultValue) {
 }
 
 
-function joinRoom() {
+async function joinRoom() {
   var roomName = chat.props.roomNameExpr.value;
   var identity = chat.props.nickNameExpr.value;
   var token = chat.props.accessTokenExpr.value;
@@ -83,6 +84,38 @@ function joinRoom() {
   }
 
   joinRoomToggle = true;
+
+  sendWidgetEvent(
+    "DEVICE_CHECK_STARTED",
+    "INFO",
+    "Device check started"
+  );
+
+  const deviceCheckResult = await performDeviceCheck();
+
+  if (!deviceCheckResult.success) {
+    sendWidgetEvent(
+      "DEVICE_CHECK_FAILED",
+      "ERROR",
+      "Device check failed",
+      deviceCheckResult
+    );
+
+    handleError("Device check failed", {
+      name: "DeviceCheckError",
+      message: deviceCheckResult.errors.join(", ")
+    });
+
+    joinRoomToggle = false;
+    return;
+  }
+
+  sendWidgetEvent(
+    "DEVICE_CHECK_PASSED",
+    "INFO",
+    "Device check passed",
+    deviceCheckResult
+  );
 
   log("Joining room '" + roomName + "'...");
 
@@ -120,8 +153,6 @@ function joinRoom() {
       );
     },
     function (error) {
-      //console.error("Unable to create local media tracks", error);
-      //log("Unable to access Camera and Microphone");
       handleError("Unable to access Camera and Microphone", error);
     }
   );
