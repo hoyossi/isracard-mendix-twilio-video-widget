@@ -11,6 +11,8 @@ var chat;
 var joinRoomToggle;
 var previewToggle;
 var activeRoom;
+//Prevent double connection 
+var connectionInProgress = false;
 var remoteTracks;
 var localTracks;
 var participantContainers = {};
@@ -82,6 +84,11 @@ async function joinRoom() {
   if (!roomName || !identity || !token) {
     return;
   }
+  if (connectionInProgress) {
+      log("Connection already in progress");
+      return;
+  }
+  connectionInProgress = true;
 
   joinRoomToggle = true;
 
@@ -107,6 +114,7 @@ async function joinRoom() {
     });
 
     joinRoomToggle = false;
+    connectionInProgress = false;
     return;
   }
 
@@ -197,11 +205,20 @@ function leaveRoom() {
   joinRoomToggle = false;
   previewToggle = false;
   
+  if (activeRoom || localTracks || joinRoomToggle || previewToggle) {
+    sendWidgetEvent(
+      "SESSION_END_REQUESTED",
+      "INFO",
+      "User requested session termination"
+    );
+  }
+
   if (activeRoom) {
     activeRoom.disconnect();
   } else {
     stopLocalTracks();
   }
+  connectionInProgress = false;
 }
 
 function getPreviewContainer() {
@@ -282,6 +299,7 @@ function handleError(message, error) {
     ? message + ": " + error.message
     : message;
 
+  connectionInProgress = false;
   console.error(fullMessage, error || "");
   log(fullMessage);
 
@@ -405,7 +423,7 @@ function getTracks(participant) {
 // Successfully connected!
 function roomJoined(room, identity) {
   activeRoom = room;
-
+  connectionInProgress = false;
   log("Joined as '" + identity + "'");
 
   sendWidgetEvent(
@@ -478,6 +496,7 @@ function roomJoined(room, identity) {
     room.participants.forEach(removeParticipantContainer);
     stopLocalTracks();
     activeRoom = null;
+    connectionInProgress = false;
   });
 }
 
