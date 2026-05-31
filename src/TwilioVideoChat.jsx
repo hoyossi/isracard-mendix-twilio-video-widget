@@ -4,6 +4,7 @@ import { hot } from "react-hot-loader/root";
 import "./ui/TwilioVideoChat.css";
 import { buildWidgetEvent, emitWidgetEvent } from "./services/eventLogger";
 import { performDeviceCheck } from "./services/deviceService";
+import { WIDGET_VERSION, WIDGET_FEATURES } from "./version";
 
 var Video = require('twilio-video');
 
@@ -19,6 +20,27 @@ var participantContainers = {};
 
 
 var focusLost = false;
+
+function getConnectionState() {
+  if (connectionInProgress) {
+    return "Connecting";
+  }
+
+  if (activeRoom) {
+    return "Connected";
+  }
+
+  if (localTracks) {
+    return "Preview";
+  }
+
+  return "Disconnected";
+}
+
+function getBrowserInfo() {
+  return navigator.userAgent || "";
+}
+
 
 function handleFocusLost() {
   if (!focusLost) {
@@ -537,10 +559,31 @@ class TwilioVideoChat extends Component {
   }
 
   render() {
+    const showDiagnostics = this.props.showDiagnostics === true;
+
     return <div class="twilio-video">
         <div class="media remote-media"></div>
         <div class="media local-media"></div>
         <div class="log"></div>
+
+        {showDiagnostics && (
+          <div class="twilio-diagnostics">
+            <div><strong>ISR Secure Video Widget</strong></div>
+            <div>Version: {WIDGET_VERSION}</div>
+            <div>Participant side: {this.props.participantSide}</div>
+            <div>Connection state: {getConnectionState()}</div>
+            <div>Twilio SDK: 2.1.0</div>
+            <div>Browser: {getBrowserInfo()}</div>
+            <div>
+              Features:
+              <ul>
+                {WIDGET_FEATURES.map(function(feature) {
+                  return <li key={feature}>{feature}</li>;
+                })}
+              </ul>
+            </div>
+          </div>
+        )}
     </div>;
   }
 }

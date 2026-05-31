@@ -127,5 +127,11 @@
                 Otherwise, will render it into this widget content (div.log).</description>
             </property>
         </propertyGroup>
+        <propertyGroup caption="Diagnostics">
+            <property key="showDiagnostics" type="boolean" required="false" defaultValue="false">
+                <caption>Show diagnostics</caption>
+                <description>Shows widget version, runtime status, participant side and supported features.</description>
+            </property>
+        </propertyGroup>
     </properties>
 </widget>
