@@ -59,6 +59,7 @@
             </property>
         </propertyGroup>
         <propertyGroup caption="Events">
+
             <property key="onConnectedAction" type="action" required="false">
                 <caption>On connected</caption>
                 <description>Executed after successfully joining the Twilio room.</description>
@@ -89,6 +90,29 @@
             <property key="onFocusReturnedAction" type="action" required="false">
                 <caption>On focus returned</caption>
                 <description>Executed when the browser tab/window becomes active again.</description>
+            </property>
+        </propertyGroup>
+        <propertyGroup caption="Generic event">
+            <property key="participantSide" type="enumeration" required="false" defaultValue="customer">
+                <caption>Participant side</caption>
+                <description>Defines whether this widget instance is used by customer or agent.</description>
+                <enumerationValues>
+                    <enumerationValue key="customer">Customer</enumerationValue>
+                    <enumerationValue key="agent">Agent</enumerationValue>
+                </enumerationValues>
+            </property>
+
+            <property key="eventJsonAttribute" type="attribute" required="false">
+                <caption>Event JSON attribute</caption>
+                <description>String attribute where the widget writes the latest event payload as JSON.</description>
+                <attributeTypes>
+                    <attributeType name="String" />
+                </attributeTypes>
+            </property>
+
+            <property key="onWidgetEvent" type="action" required="false">
+                <caption>On widget event</caption>
+                <description>Executed whenever the widget emits a generic event.</description>
             </property>
         </propertyGroup>
         <propertyGroup caption="Logging">

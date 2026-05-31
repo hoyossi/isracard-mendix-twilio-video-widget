@@ -2,6 +2,7 @@ import { Component, createElement } from "react";
 import { hot } from "react-hot-loader/root";
 
 import "./ui/TwilioVideoChat.css";
+import { buildWidgetEvent, emitWidgetEvent } from "./services/eventLogger";
 
 var Video = require('twilio-video');
 
@@ -20,6 +21,13 @@ function handleFocusLost() {
   if (!focusLost) {
     focusLost = true;
     log("Focus lost");
+
+    sendWidgetEvent(
+      "FOCUS_LOST",
+      "WARNING",
+      "Browser focus lost or page became hidden"
+    );
+
     executeAction("onFocusLostAction");
   }
 }
@@ -28,6 +36,13 @@ function handleFocusReturned() {
   if (focusLost) {
     focusLost = false;
     log("Focus returned");
+
+    sendWidgetEvent(
+      "FOCUS_RETURNED",
+      "INFO",
+      "Browser focus returned or page became visible"
+    );
+
     executeAction("onFocusReturnedAction");
   }
 }
@@ -207,6 +222,30 @@ function executeAction(actionName) {
   }
 }
 
+function sendWidgetEvent(eventType, eventLevel, message, details = {}) {
+
+  if (!chat || !chat.props) {
+    return;
+  }
+
+  const payload = buildWidgetEvent({
+    eventType,
+    eventLevel,
+    sessionId: chat.props.roomNameExpr?.value || "",
+    participantIdentity: chat.props.nickNameExpr?.value || "",
+    participantSide: chat.props.participantSide || "",
+    message,
+    details
+  });
+
+  emitWidgetEvent({
+    eventJsonAttribute: chat.props.eventJsonAttribute,
+    onWidgetEvent: chat.props.onWidgetEvent,
+    payload,
+    logMessages: getBooleanProp("logActiveExpr", false)
+  });
+}
+
 function handleError(message, error) {
   var fullMessage = error && error.message
     ? message + ": " + error.message
@@ -214,6 +253,17 @@ function handleError(message, error) {
 
   console.error(fullMessage, error || "");
   log(fullMessage);
+
+  sendWidgetEvent(
+    "FATAL_ERROR",
+    "ERROR",
+    fullMessage,
+    {
+      errorName: error && error.name ? error.name : "",
+      errorCode: error && error.code ? error.code : "",
+      errorMessage: error && error.message ? error.message : ""
+    }
+  );
 
   executeAction("onErrorAction");
 }
@@ -326,6 +376,17 @@ function roomJoined(room, identity) {
   activeRoom = room;
 
   log("Joined as '" + identity + "'");
+
+  sendWidgetEvent(
+    "ROOM_CONNECTED",
+    "INFO",
+    "Connected to Twilio room",
+    {
+        roomName: room.name,
+        identity: identity
+    }
+  );
+
   executeAction("onConnectedAction");
 
   // Attach the Tracks of the Room's Participants.
@@ -338,12 +399,30 @@ function roomJoined(room, identity) {
   // When a Participant joins the Room, log the event.
   room.on('participantConnected', function(participant) {
     log("Remote participant connected: '" + participant.identity + "'");
+    
+    sendWidgetEvent(
+      "PARTICIPANT_CONNECTED",
+      "INFO",
+      "Remote participant connected",
+      {
+          participantIdentity: participant.identity
+      }
+    );
+
     participantConnected(participant, remoteMediaContainer);
     executeAction("onParticipantConnectedAction");
   });
 
   // When a Participant leaves the Room, detach its Tracks.
   room.on('participantDisconnected', function(participant) {
+    sendWidgetEvent(
+      "PARTICIPANT_DISCONNECTED",
+      "INFO",
+      "Remote participant disconnected",
+      {
+          participantIdentity: participant.identity
+      }
+    );
     log("Remote participant disconnected: '" + participant.identity + "'");
     detachParticipantTracks(participant);
     removeParticipantContainer(participant);
@@ -354,6 +433,13 @@ function roomJoined(room, identity) {
   // of all Participants, including that of the LocalParticipant.
   room.on('disconnected', function() {
     log('Left the room');
+
+    sendWidgetEvent(
+      "ROOM_DISCONNECTED",
+      "INFO",
+      "Disconnected from Twilio room"
+    );
+
     executeAction("onDisconnectedAction");
 
     detachParticipantTracks(room.localParticipant);
