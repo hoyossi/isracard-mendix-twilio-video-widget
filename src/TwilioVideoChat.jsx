@@ -14,7 +14,7 @@ var previewToggle;
 var activeRoom;
 //Prevent double connection 
 var connectionInProgress = false;
-var remoteTracks;
+
 var localTracks;
 var participantContainers = {};
 
@@ -562,7 +562,8 @@ class TwilioVideoChat extends Component {
     const showDiagnostics = this.props.showDiagnostics === true;
     const showFeatureList = this.props.showFeatureList === true;
 
-    return <div class="twilio-video">
+    return (
+      <div class="twilio-video">
         <div class="media remote-media"></div>
         <div class="media local-media"></div>
         <div class="log"></div>
@@ -577,10 +578,10 @@ class TwilioVideoChat extends Component {
             <div>Browser: {getBrowserInfo()}</div>
           </div>
         )}
-        {showFeatureList && (
-          <div className="twilio-diagnostics">
-            <div><strong>Supported Features</strong></div>
 
+        {showFeatureList && (
+          <div class="twilio-diagnostics">
+            <div><strong>Supported Features</strong></div>
             <ul>
               {WIDGET_FEATURES.map(feature => (
                 <li key={feature}>{feature}</li>
@@ -588,6 +589,8 @@ class TwilioVideoChat extends Component {
             </ul>
           </div>
         )}
+      </div>
+    );
   }
 }
 
