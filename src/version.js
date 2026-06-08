@@ -6,5 +6,7 @@ export const WIDGET_FEATURES = [
   "Connection Lifecycle Protection",
   "Participant Tracking",
   "Focus Monitoring",
-  "Production Diagnostics Panel"
+  "Production Diagnostics Panel",
+  "Improved Local Track Cleanup",
+  "Reconnect Stability"
 ];

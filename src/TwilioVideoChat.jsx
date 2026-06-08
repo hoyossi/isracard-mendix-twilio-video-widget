@@ -354,7 +354,12 @@ function handleError(message, error) {
 
 function hidePreview() {
   previewToggle = false;
-  clearPreviewContainer();
+
+  if (!activeRoom) {
+    stopLocalTracks();
+  } else {
+    clearPreviewContainer();
+  }
 }
 
 // Attach the Track to the DOM.
