@@ -97,6 +97,12 @@ function getBooleanProp(propName, defaultValue) {
     return prop.value;
 }
 
+function hasActiveLocalTracks() {
+  return localTracks && localTracks.some(function(track) {
+    return track.mediaStreamTrack &&
+      track.mediaStreamTrack.readyState === "live";
+  });
+}
 
 async function joinRoom() {
   var roomName = chat.props.roomNameExpr.value;
@@ -161,7 +167,7 @@ async function joinRoom() {
     getBooleanProp("microphoneEnabledExpr", true)
   );
 
-  var localTracksPromise = localTracks
+  var localTracksPromise = hasActiveLocalTracks()
     ? Promise.resolve(localTracks)
     : Video.createLocalTracks({
         audio: getBooleanProp("microphoneEnabledExpr", true),
@@ -224,10 +230,9 @@ function stopLocalTracks() {
 
 // Leave Room.
 function leaveRoom() {
-  joinRoomToggle = false;
-  previewToggle = false;
-  
-  if (activeRoom || localTracks || joinRoomToggle || previewToggle) {
+  var hadActiveSession = activeRoom || localTracks || joinRoomToggle || previewToggle;
+
+  if (hadActiveSession) {
     sendWidgetEvent(
       "SESSION_END_REQUESTED",
       "INFO",
@@ -235,12 +240,21 @@ function leaveRoom() {
     );
   }
 
-  if (activeRoom) {
-    activeRoom.disconnect();
-  } else {
-    stopLocalTracks();
-  }
+  joinRoomToggle = false;
+  previewToggle = false;
   connectionInProgress = false;
+
+  if (activeRoom) {
+    try {
+      activeRoom.disconnect();
+    } catch (e) {
+      console.error("Error disconnecting room", e);
+    }
+  }
+
+  stopLocalTracks();
+  clearPreviewContainer();
+  activeRoom = null;
 }
 
 function getPreviewContainer() {
@@ -263,9 +277,8 @@ function showPreview() {
     getBooleanProp("microphoneEnabledExpr", true)
   );
 
-  var localTracksPromise = localTracks
+  var localTracksPromise = hasActiveLocalTracks()
     ? Promise.resolve(localTracks)
-   // : Video.createLocalTracks();
     : Video.createLocalTracks({
         audio: getBooleanProp("microphoneEnabledExpr", true),
         video: getBooleanProp("cameraEnabledExpr", true)
@@ -516,8 +529,13 @@ function roomJoined(room, identity) {
     detachParticipantTracks(room.localParticipant);
     room.participants.forEach(detachParticipantTracks);
     room.participants.forEach(removeParticipantContainer);
+ 
     stopLocalTracks();
+    clearPreviewContainer();
+
     activeRoom = null;
+    joinRoomToggle = false;
+    previewToggle = false;
     connectionInProgress = false;
   });
 }
