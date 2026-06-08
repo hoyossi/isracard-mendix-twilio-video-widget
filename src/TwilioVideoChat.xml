@@ -127,30 +127,45 @@
                 Otherwise, will render it into this widget content (div.log).</description>
             </property>
         </propertyGroup>
-        <propertyGroup caption="About / Diagnostics">
-            <property key="showDiagnostics" type="boolean" required="true" defaultValue="false">
+        <propertyGroup caption="About / Diagnostics (v1.3.0)">
+            <property key="showDiagnostics"
+                    type="boolean"
+                    required="true"
+                    defaultValue="false">
+
                 <caption>Show diagnostics panel</caption>
-                <description>Shows widget version, Twilio SDK version, browser information and connection state.</description>
-            </property>
 
-            <property key="showFeatureList" type="boolean" required="true" defaultValue="false">
+                <description>
+                    Displays runtime diagnostics.
+
+                    Current Widget Version: 1.3.0
+                    Twilio SDK Version: 2.1.0
+
+                    Enterprise Features:
+                    • Generic Event Framework
+                    • Device Validation
+                    • Connection Lifecycle Protection
+                    • Participant Tracking
+                    • Focus Monitoring
+                    • Production Diagnostics Panel
+                    • Improved Local Track Cleanup
+                    • Reconnect Stability
+                </description>
+
+            </property>
+            <property key="showFeatureList"
+                    type="boolean"
+                    required="true"
+                    defaultValue="false">
+
                 <caption>Show feature list</caption>
-                <description>Shows the list of enterprise features supported by this widget version.</description>
-            </property>
 
-            <property key="aboutWidgetVersion" type="string" required="true" defaultValue="1.3.0">
-                <caption>Widget version</caption>
-                <description>Current widget package version. Do not change manually.</description>
-            </property>
+                <description>
+                    Shows the runtime feature list inside the widget.
 
-            <property key="aboutTwilioSdkVersion" type="string" required="true" defaultValue="2.1.0">
-                <caption>Twilio Video SDK version</caption>
-                <description>Twilio Video JavaScript SDK version used by this widget.</description>
-            </property>
+                    Release: v1.3.0
+                </description>
 
-            <property key="aboutFeatureList" type="string" required="true" defaultValue="Generic Event Framework; Device Validation; Connection Lifecycle Protection; Participant Tracking; Focus Monitoring; Production Diagnostics Panel; Improved Local Track Cleanup; Reconnect Stability">
-                <caption>Feature list</caption>
-                <description>Current supported enterprise features in this widget version.</description>
             </property>
         </propertyGroup>
     </properties>
