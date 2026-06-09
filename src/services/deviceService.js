@@ -13,17 +13,21 @@ export async function performDeviceCheck(options = {}) {
             microphoneCount: 0,
             deviceLabelsAvailable: false,
             requireCamera,
-            requireMicrophone
+            requireMicrophone,
+            isMobile: /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent),
+            userAgent: navigator.userAgent
         }
     };
 
     result.details.https =
         window.location.protocol === "https:" ||
-        window.location.hostname === "localhost";
+        window.location.hostname === "localhost" ||
+        window.location.hostname === "127.0.0.1";
 
     if (!result.details.https) {
         result.success = false;
         result.errors.push("HTTPS_REQUIRED");
+        return result;
     }
 
     if (!navigator.mediaDevices) {

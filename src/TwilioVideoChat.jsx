@@ -1,5 +1,6 @@
-import { Component, createElement } from "react";
+import { Component, createElement, createRef } from "react";
 import { hot } from "react-hot-loader/root";
+import Video from "twilio-video"; // Modernized standard ES6 import
 
 import "./ui/TwilioVideoChat.css";
 import { buildWidgetEvent, emitWidgetEvent } from "./services/eventLogger";
@@ -9,8 +10,6 @@ import {
   WIDGET_FEATURES,
   TWILIO_SDK_VERSION
 } from "./version";
-
-const Video = require('twilio-video');
 
 class TwilioVideoChat extends Component {
   constructor(props) {
@@ -23,20 +22,25 @@ class TwilioVideoChat extends Component {
       participantCount: 0
     };
 
-    // Instance-level state (not React state, but instance-scoped)
+    // Safe DOM Targets using React Refs
+    this.localMediaRef = createRef();
+    this.remoteMediaRef = createRef();
+    this.logRef = createRef();
+
+    // Instance Management
+    this._isMounted = false;
     this.instanceId = Math.random().toString(36).substr(2, 9);
     this.activeRoom = null;
     this.localTracks = [];
-    this.participantContainers = {};
+    this.participantContainers = new Map(); // Upgraded to Map for safer memory collection
     this.connectionInProgress = false;
-    this.joinRoomToggle = false;
-    this.previewToggle = false;
-    this.focusLost = false;
     this.eventListeners = [];
   }
 
   componentDidMount() {
-    // Register event listeners as instance methods bound to this widget
+    this._isMounted = true;
+    
+    // Register event listeners safely
     this.registerEventListener(window, 'beforeunload', () => this.leaveRoom());
     this.registerEventListener(window, 'blur', () => this.handleFocusLost());
     this.registerEventListener(window, 'focus', () => this.handleFocusReturned());
@@ -47,16 +51,24 @@ class TwilioVideoChat extends Component {
         this.handleFocusReturned();
       }
     });
+
+    // Handle initial state expressions passed on widget load
+    if (this.props.joinRoomActiveExpr?.value && !this.connectionInProgress) {
+      this.joinRoom();
+    } else if (this.props.previewActiveExpr?.value) {
+      this.showPreview();
+    }
   }
 
   componentWillUnmount() {
-    // Clean up: remove all event listeners
+    this._isMounted = false;
+
+    // Flush active bindings to completely eliminate closures leak
     this.eventListeners.forEach(({ target, event, handler }) => {
       target.removeEventListener(event, handler);
     });
     this.eventListeners = [];
 
-    // Clean up tracks and room
     this.leaveRoom();
   }
 
@@ -65,117 +77,120 @@ class TwilioVideoChat extends Component {
     this.eventListeners.push({ target, event, handler });
   }
 
-  componentDidUpdate() {
-    const { joinRoomActiveExpr, previewActiveExpr } = this.props;
+  componentDidUpdate(prevProps) {
+    const prevJoinRoom = prevProps.joinRoomActiveExpr?.value;
+    const currentJoinRoom = this.props.joinRoomActiveExpr?.value;
+    const prevPreview = prevProps.previewActiveExpr?.value;
+    const currentPreview = this.props.previewActiveExpr?.value;
 
-    const shouldJoinRoom = joinRoomActiveExpr && joinRoomActiveExpr.value;
-    const shouldShowPreview = previewActiveExpr && previewActiveExpr.value;
-
-    if (shouldJoinRoom && !this.joinRoomToggle) {
-      this.joinRoom();
-    } else if (!shouldJoinRoom && this.joinRoomToggle) {
-      this.leaveRoom();
+    // Guard evaluation tracks against historical primitives instead of mutable triggers
+    if (currentJoinRoom !== prevJoinRoom) {
+      if (currentJoinRoom && !this.activeRoom && !this.connectionInProgress) {
+        this.joinRoom();
+      } else if (!currentJoinRoom && (this.activeRoom || this.connectionInProgress)) {
+        this.leaveRoom();
+      }
     }
 
-    if (shouldShowPreview && !this.previewToggle) {
-      this.showPreview();
-    } else if (!shouldShowPreview && this.previewToggle) {
-      this.hidePreview();
-    }
-  }
-
-  log(message) {
-    const { logActiveExpr, logSelector } = this.props;
-    if (logActiveExpr && logActiveExpr.value) {
-      const selector = logSelector || 'div.twilio-video div.log';
-      const logElement = document.querySelector(selector);
-      if (logElement) {
-        logElement.innerHTML += '<p>' + message + '</p>';
+    if (currentPreview !== prevPreview && !this.activeRoom) {
+      if (currentPreview && this.localTracks.length === 0) {
+        this.showPreview();
+      } else if (!currentPreview) {
+        this.hidePreview();
       }
     }
   }
 
-  getConnectionState() {
+  log(message) {
+    const { logActiveExpr } = this.props;
+    if (logActiveExpr && logActiveExpr.value) {
+      const logElement = this.logRef.current;
+      if (logElement) {
+        const p = document.createElement('p');
+        p.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+        logElement.appendChild(p);
+
+        logElement.scrollTop = logElement.scrollHeight;
+        while (logElement.childNodes.length > 100) {
+          logElement.removeChild(logElement.firstChild);
+        }
+      }
+    }
+  }
+
+  updateConnectionState() {
+    if (!this._isMounted) return;
+
+    let connectionState = "Disconnected";
     if (this.connectionInProgress) {
-      return "Connecting";
+      connectionState = "Connecting";
+    } else if (this.activeRoom) {
+      connectionState = "Connected";
+    } else if (this.localTracks.length > 0) {
+      connectionState = "Preview";
     }
-    if (this.activeRoom) {
-      return "Connected";
-    }
-    if (this.localTracks.length > 0) {
-      return "Preview";
-    }
-    return "Disconnected";
+
+    this.setState({ connectionState });
   }
 
   toggleMicrophone() {
-    if (!this.activeRoom) {
+    if (!this.activeRoom?.localParticipant) {
       this.log("Cannot toggle microphone: not connected to room");
       return;
     }
 
     try {
-      const localParticipant = this.activeRoom.localParticipant;
-      if (!localParticipant) return;
-
-      const audioTrack = Array.from(localParticipant.audioTracks.values())[0];
-      if (!audioTrack) {
-        this.log("No audio track available");
+      const audioTrackPub = Array.from(this.activeRoom.localParticipant.audioTracks.values())[0];
+      if (!audioTrackPub?.track) {
+        this.log("No audio track available to mute");
         return;
       }
 
-      const isMuted = !this.state.isMicrophoneMuted;
-      audioTrack.track.disable();
-      this.setState({ isMicrophoneMuted: isMuted });
+      const shouldMute = !this.state.isMicrophoneMuted;
+      if (shouldMute) {
+        audioTrackPub.track.disable();
+        this.setState({ isMicrophoneMuted: true });
+        this.log("Microphone muted");
+      } else {
+        audioTrackPub.track.enable();
+        this.setState({ isMicrophoneMuted: false });
+        this.log("Microphone unmuted");
+      }
 
-      this.log(isMuted ? "Microphone muted" : "Microphone unmuted");
-      this.sendWidgetEvent(
-        "MICROPHONE_TOGGLED",
-        "INFO",
-        isMuted ? "Microphone muted" : "Microphone unmuted",
-        { isMuted }
-      );
+      this.sendWidgetEvent("MICROPHONE_TOGGLED", "INFO", `Microphone state changed`, { isMuted: shouldMute });
     } catch (e) {
-      console.error("Error toggling microphone", e);
-      this.log("Error toggling microphone: " + (e?.message || "Unknown error"));
+      this.handleError("Error toggling microphone", e);
     }
   }
 
   toggleCamera() {
-    if (!this.activeRoom) {
+    if (!this.activeRoom?.localParticipant) {
       this.log("Cannot toggle camera: not connected to room");
       return;
     }
 
     try {
-      const localParticipant = this.activeRoom.localParticipant;
-      if (!localParticipant) return;
-
-      const videoTrack = Array.from(localParticipant.videoTracks.values())[0];
-      if (!videoTrack) {
-        this.log("No video track available");
+      const videoTrackPub = Array.from(this.activeRoom.localParticipant.videoTracks.values())[0];
+      if (!videoTrackPub?.track) {
+        this.log("No video track available to mute");
         return;
       }
 
-      const isMuted = !this.state.isCameraMuted;
-      videoTrack.track.disable();
-      this.setState({ isCameraMuted: isMuted });
+      const shouldMute = !this.state.isCameraMuted;
+      if (shouldMute) {
+        videoTrackPub.track.disable();
+        this.setState({ isCameraMuted: true });
+        this.log("Camera disabled");
+      } else {
+        videoTrackPub.track.enable();
+        this.setState({ isCameraMuted: false });
+        this.log("Camera enabled");
+      }
 
-      this.log(isMuted ? "Camera muted" : "Camera unmuted");
-      this.sendWidgetEvent(
-        "CAMERA_TOGGLED",
-        "INFO",
-        isMuted ? "Camera muted" : "Camera unmuted",
-        { isMuted }
-      );
+      this.sendWidgetEvent("CAMERA_TOGGLED", "INFO", `Camera state changed`, { isMuted: shouldMute });
     } catch (e) {
-      console.error("Error toggling camera", e);
-      this.log("Error toggling camera: " + (e?.message || "Unknown error"));
+      this.handleError("Error toggling camera", e);
     }
-  }
-
-  updateConnectionState() {
-    this.setState({ connectionState: this.getConnectionState() });
   }
 
   sendWidgetEvent(eventType, eventLevel, message, details = {}) {
@@ -201,46 +216,23 @@ class TwilioVideoChat extends Component {
 
   getIntegerProp(propName, defaultValue) {
     const prop = this.props[propName];
-    if (!prop || prop.value === undefined || prop.value === null) {
-      return defaultValue;
-    }
+    if (!prop || prop.value === undefined || prop.value === null) return defaultValue;
     const parsedValue = parseInt(prop.value, 10);
     return isNaN(parsedValue) ? defaultValue : parsedValue;
   }
 
   getBooleanProp(propName, defaultValue) {
     const prop = this.props[propName];
-    if (!prop || prop.value === undefined || prop.value === null) {
-      return defaultValue;
-    }
+    if (!prop || prop.value === undefined || prop.value === null) return defaultValue;
     return prop.value;
   }
 
-  getParticipantSide() {
-    return this.props.participantSide || "customer";
-  }
-
   isAgentParticipant() {
-    return this.getParticipantSide() === "agent";
-  }
-
-  getDefaultMediaEnabled() {
-    return this.isAgentParticipant() ? false : true;
-  }
-
-  hasActiveLocalTracks() {
-    return this.localTracks && this.localTracks.some(track => {
-      return track && track.mediaStreamTrack && track.mediaStreamTrack.readyState === "live";
-    });
-  }
-
-  getPreviewContainer() {
-    const selector = this.props.previewSelector || 'div.twilio-video div.local-media';
-    return document.querySelector(selector);
+    return this.props.participantSide === "agent";
   }
 
   clearPreviewContainer() {
-    const previewContainer = this.getPreviewContainer();
+    const previewContainer = this.localMediaRef.current;
     if (previewContainer) {
       while (previewContainer.firstChild) {
         previewContainer.removeChild(previewContainer.firstChild);
@@ -252,642 +244,327 @@ class TwilioVideoChat extends Component {
     if (this.localTracks && this.localTracks.length > 0) {
       this.localTracks.forEach(track => {
         try {
-          this.detachTrack(track);
-
-          if (track.mediaStreamTrack && typeof track.mediaStreamTrack.stop === "function") {
-            track.mediaStreamTrack.stop();
-          }
-
-          if (typeof track.stop === "function") {
-            track.stop();
-          }
+          track.detach().forEach(el => el.remove());
+          if (typeof track.stop === "function") track.stop();
         } catch (e) {
-          console.error("Error stopping local track", e);
+          console.error("Error completely stopping local track", e);
         }
       });
     }
-
     this.localTracks = [];
     this.clearPreviewContainer();
   }
 
   attachTrack(track, container) {
-    if (!track || !container || typeof track.attach !== "function") {
-      return;
-    }
+    if (!track || !container || typeof track.attach !== "function") return;
     try {
-      container.appendChild(track.attach());
+      const attachedElement = track.attach();
+      // Guard against duplicating DOM attachments
+      if (!container.contains(attachedElement)) {
+        container.appendChild(attachedElement);
+      }
     } catch (e) {
-      console.error("Error attaching track", e);
-    }
-  }
-
-  attachTracks(tracks, container) {
-    if (Array.isArray(tracks)) {
-      tracks.forEach(track => this.attachTrack(track, container));
+      console.error("Error tracking DOM attach node", e);
     }
   }
 
   detachTrack(track) {
-    if (!track || typeof track.detach !== "function") {
-      return;
-    }
+    if (!track || typeof track.detach !== "function") return;
     try {
-      track.detach().forEach(element => {
-        if (element && element.parentNode) {
-          element.parentNode.removeChild(element);
-        }
-      });
+      track.detach().forEach(element => element?.remove());
     } catch (e) {
-      console.error("Error detaching track", e);
-    }
-  }
-
-  removeParticipantContainer(participant) {
-    if (!participant) return;
-
-    const container = this.participantContainers[participant.identity];
-    if (container && container.parentNode) {
-      container.parentNode.removeChild(container);
-    }
-    delete this.participantContainers[participant.identity];
-  }
-
-  trackPublished(publication, container) {
-    if (!publication || !container) return;
-
-    if (publication.isSubscribed) {
-      this.attachTrack(publication.track, container);
-    }
-
-    const subscribedHandler = (track) => {
-      this.attachTrack(track, container);
-    };
-
-    const unsubscribedHandler = (track) => {
-      this.detachTrack(track);
-    };
-
-    publication.once('subscribed', subscribedHandler);
-    publication.once('unsubscribed', unsubscribedHandler);
-  }
-
-  participantConnected(participant, container) {
-    if (!participant || !container) return;
-
-    const participantContainer = document.createElement('div');
-    participantContainer.className = 'participant-container';
-    container.appendChild(participantContainer);
-
-    const tracksContainer = document.createElement('div');
-    tracksContainer.className = 'participant-tracks';
-    participantContainer.appendChild(tracksContainer);
-
-    const nameContainer = document.createElement('div');
-    nameContainer.className = 'participant-name';
-    nameContainer.textContent = participant.identity;
-    participantContainer.appendChild(nameContainer);
-
-    this.participantContainers[participant.identity] = participantContainer;
-
-    participant.tracks.forEach(publication => {
-      this.trackPublished(publication, tracksContainer);
-    });
-
-    const trackPublishedHandler = (publication) => {
-      this.trackPublished(publication, tracksContainer);
-    };
-
-    const trackUnpublishedHandler = (publication) => {
-      // Track will be detached via unsubscribed event
-    };
-
-    participant.once('trackPublished', trackPublishedHandler);
-    participant.once('trackUnpublished', trackUnpublishedHandler);
-  }
-
-  detachParticipantTracks(participant) {
-    if (!participant) return;
-
-    try {
-      Array.from(participant.tracks.values()).forEach(publication => {
-        if (publication.track) {
-          this.detachTrack(publication.track);
-        }
-      });
-    } catch (e) {
-      console.error("Error detaching participant tracks", e);
+      console.error("Error executing safe detach track track node", e);
     }
   }
 
   async joinRoom() {
     const { roomNameExpr, nickNameExpr, accessTokenExpr } = this.props;
-
     const roomName = roomNameExpr?.value;
     const identity = nickNameExpr?.value;
     const token = accessTokenExpr?.value;
 
     if (!roomName || !identity || !token) {
-      this.log("Missing room name, identity, or token");
+      this.log("Missing authentication properties validation schema aborting");
       return;
     }
 
-    if (this.connectionInProgress) {
-      this.log("Connection already in progress");
-      return;
-    }
+    if (this.connectionInProgress) return;
 
     this.connectionInProgress = true;
-    this.joinRoomToggle = true;
     this.updateConnectionState();
 
     const isAgent = this.isAgentParticipant();
-    const defaultMediaEnabled = this.getDefaultMediaEnabled();
-    const audioEnabled = this.getBooleanProp("microphoneEnabledExpr", defaultMediaEnabled);
-    const videoEnabled = this.getBooleanProp("cameraEnabledExpr", defaultMediaEnabled);
+    const defaultMedia = !isAgent;
+    const audioEnabled = this.getBooleanProp("microphoneEnabledExpr", defaultMedia);
+    const videoEnabled = this.getBooleanProp("cameraEnabledExpr", defaultMedia);
     const videoWidth = this.getIntegerProp("videoWidth", 640);
     const videoHeight = this.getIntegerProp("videoHeight", 480);
 
-    const connectOptions = {
-      name: roomName,
-      logLevel: "warn"
-    };
+    const connectOptions = { name: roomName, logLevel: "warn", tracks: [] };
 
     if (isAgent) {
-      this.log("Agent joining without local audio/video tracks");
-
-      this.sendWidgetEvent(
-        "DEVICE_CHECK_SKIPPED",
-        "INFO",
-        "Device check skipped for agent participant without local media",
-        {
-          participantSide: this.getParticipantSide(),
-          audioEnabled: false,
-          videoEnabled: false
-        }
-      );
-
-      connectOptions.tracks = [];
-
+      this.log("Agent joining session. Hardware access initialization skipped.");
       try {
         const room = await Video.connect(token, connectOptions);
+        if (!this._isMounted) {
+          room.disconnect();
+          return;
+        }
         this.roomJoined(room, identity);
       } catch (error) {
-        this.joinRoomToggle = false;
-        this.connectionInProgress = false;
-        this.updateConnectionState();
-        this.handleError("Could not connect to Twilio", error);
+        this.handleError("Agent connection sequence failed", error);
       }
-
       return;
     }
 
-    this.sendWidgetEvent(
-      "DEVICE_CHECK_STARTED",
-      "INFO",
-      "Device check started",
-      {
-        participantSide: this.getParticipantSide(),
-        audioEnabled,
-        videoEnabled,
-        videoWidth,
-        videoHeight
-      }
-    );
-
+    // Customer hardware onboarding line execution
     try {
-      const deviceCheckResult = await performDeviceCheck({
-        requireCamera: false,
-        requireMicrophone: false
-      });
+      const deviceCheckResult = await performDeviceCheck({ requireCamera: false, requireMicrophone: false });
+      let finalAudio = audioEnabled && deviceCheckResult.success;
+      let finalVideo = videoEnabled && deviceCheckResult.success;
 
-      let finalAudioEnabled = audioEnabled;
-      let finalVideoEnabled = videoEnabled;
-
-      if (!deviceCheckResult.success) {
-        this.sendWidgetEvent(
-          "DEVICE_CHECK_FAILED",
-          "WARNING",
-          "Device check failed - attempting to join without local media",
-          deviceCheckResult
-        );
-
-        this.log("Warning: Device check failed - " + deviceCheckResult.errors.join(", ") + " - joining without local media");
-        finalAudioEnabled = false;
-        finalVideoEnabled = false;
-      } else {
-        this.sendWidgetEvent(
-          "DEVICE_CHECK_PASSED",
-          "INFO",
-          "Device check passed",
-          deviceCheckResult
-        );
-      }
-
-      this.log("Joining room '" + roomName + "'...");
-      this.log(
-        "Creating local tracks. Camera: " +
-        finalVideoEnabled +
-        ", Microphone: " +
-        finalAudioEnabled +
-        ", Width: " +
-        videoWidth +
-        ", Height: " +
-        videoHeight
-      );
-
-      let localTracks = [];
-
-      if (finalAudioEnabled || finalVideoEnabled) {
-        if (this.hasActiveLocalTracks()) {
-          localTracks = this.localTracks;
-        } else {
-          try {
-            localTracks = await Video.createLocalTracks({
-              audio: finalAudioEnabled,
-              video: finalVideoEnabled
-                ? {
-                    width: videoWidth,
-                    height: videoHeight
-                  }
-                : false
-            });
-          } catch (error) {
-            this.log("Warning: Unable to access Camera/Microphone - " + (error?.message || "Unknown error") + " - joining without local media");
-            localTracks = [];
-          }
+      if (finalAudio || finalVideo) {
+        try {
+          this.localTracks = await Video.createLocalTracks({
+            audio: finalAudio,
+            video: finalVideo ? { width: videoWidth, height: videoHeight } : false
+          });
+        } catch (err) {
+          this.log("Hardware profiles busy or blocked by sandbox permissions, dropping media hardware layer");
+          this.localTracks = [];
         }
       }
 
-      this.localTracks = localTracks || [];
-      connectOptions.tracks = this.localTracks;
+      if (!this._isMounted) {
+        this.stopLocalTracks();
+        return;
+      }
 
+      connectOptions.tracks = this.localTracks;
       const room = await Video.connect(token, connectOptions);
       this.roomJoined(room, identity);
     } catch (error) {
-      this.joinRoomToggle = false;
-      this.connectionInProgress = false;
-      this.updateConnectionState();
-      this.handleError("Unable to complete room join", error);
+      this.handleError("Customer room handshaking sequence failed", error);
     }
   }
 
   async showPreview() {
-    if (this.isAgentParticipant()) {
-      this.log("Camera preview skipped - agent participant does not use local media");
-      this.previewToggle = false;
-      return;
-    }
+    if (this.isAgentParticipant() || !this.getBooleanProp("cameraEnabledExpr", true)) return;
 
-    const defaultMediaEnabled = this.getDefaultMediaEnabled();
-    const videoEnabled = this.getBooleanProp("cameraEnabledExpr", defaultMediaEnabled);
-
-    if (!videoEnabled) {
-      this.log("Camera preview skipped - camera disabled");
-      this.previewToggle = false;
-      return;
-    }
-
-    this.previewToggle = true;
     const videoWidth = this.getIntegerProp("videoWidth", 640);
     const videoHeight = this.getIntegerProp("videoHeight", 480);
 
-    this.log(
-      "Creating local preview track. Camera: " +
-      videoEnabled +
-      ", Width: " +
-      videoWidth +
-      ", Height: " +
-      videoHeight
-    );
-
     try {
-      const deviceCheckResult = await performDeviceCheck({
-        requireCamera: false,
-        requireMicrophone: false
+      this.stopLocalTracks(); // Wipe stale preview context configurations
+      
+      this.localTracks = await Video.createLocalTracks({
+        audio: false,
+        video: { width: videoWidth, height: videoHeight }
       });
 
-      if (!deviceCheckResult.success) {
-        this.log("Warning: Device check - " + deviceCheckResult.errors.join(", ") + " - preview unavailable");
-        this.previewToggle = false;
-        this.updateConnectionState();
+      if (!this._isMounted) {
+        this.stopLocalTracks();
         return;
       }
 
-      let previewTracks = [];
-
-      if (this.hasActiveLocalTracks()) {
-        previewTracks = this.localTracks;
-      } else {
-        try {
-          previewTracks = await Video.createLocalTracks({
-            audio: false,
-            video: {
-              width: videoWidth,
-              height: videoHeight
-            }
-          });
-        } catch (error) {
-          this.log("Warning: Unable to access Camera for preview - " + (error?.message || "Unknown error"));
-          this.previewToggle = false;
-          this.updateConnectionState();
-          return;
-        }
+      const container = this.localMediaRef.current;
+      if (container) {
+        this.localTracks.forEach(track => this.attachTrack(track, container));
       }
-
-      if (previewTracks && previewTracks.length > 0) {
-        this.localTracks = previewTracks;
-        const previewContainer = this.getPreviewContainer();
-        if (previewContainer && !previewContainer.querySelector('video')) {
-          this.attachTracks(previewTracks, previewContainer);
-        }
-      } else {
-        this.log("No camera device available for preview");
-        this.previewToggle = false;
-      }
-
       this.updateConnectionState();
     } catch (error) {
-      this.log("Error in showPreview: " + (error?.message || "Unknown error"));
-      this.previewToggle = false;
-      this.updateConnectionState();
+      this.log(`Preview window creation runtime failure: ${error?.message}`);
     }
   }
 
   hidePreview() {
-    this.previewToggle = false;
-
-    // Always stop and detach tracks when preview is hidden
     if (!this.activeRoom) {
       this.stopLocalTracks();
     } else {
-      // If in a room, only clear the preview container but keep tracks in the room
       this.clearPreviewContainer();
     }
-
     this.updateConnectionState();
   }
 
   leaveRoom() {
-    const hadActiveSession = this.activeRoom || this.localTracks.length > 0 || this.joinRoomToggle || this.previewToggle;
-
-    if (hadActiveSession) {
-      this.sendWidgetEvent(
-        "SESSION_END_REQUESTED",
-        "INFO",
-        "User requested session termination"
-      );
-    }
-
-    this.joinRoomToggle = false;
-    this.previewToggle = false;
     this.connectionInProgress = false;
 
     if (this.activeRoom) {
       try {
         this.activeRoom.disconnect();
       } catch (e) {
-        console.error("Error disconnecting room", e);
+        console.error("Error executing safe teardown sequence", e);
       }
-
-      // Detach all participant tracks
-      try {
-        this.detachParticipantTracks(this.activeRoom.localParticipant);
-        Array.from(this.activeRoom.participants.values()).forEach(participant => {
-          this.detachParticipantTracks(participant);
-          this.removeParticipantContainer(participant);
-        });
-      } catch (e) {
-        console.error("Error detaching participant tracks", e);
-      }
-
       this.activeRoom = null;
     }
 
-    // Always stop local tracks when leaving room
     this.stopLocalTracks();
-    this.clearPreviewContainer();
-
+    
+    if (this.remoteMediaRef.current) {
+      this.remoteMediaRef.current.innerHTML = "";
+    }
+    
+    this.participantContainers.clear();
     this.updateConnectionState();
   }
 
   roomJoined(room, identity) {
     this.activeRoom = room;
     this.connectionInProgress = false;
-    this.setState({ isMicrophoneMuted: false, isCameraMuted: false, participantCount: room.participants.size });
-    this.updateConnectionState();
+    
+    this.setState({
+      isMicrophoneMuted: false,
+      isCameraMuted: false,
+      participantCount: room.participants.size
+    }, () => this.updateConnectionState());
 
-    this.log("Joined as '" + identity + "'");
+    this.log(`Successfully connected inside room session as: ${identity}`);
+    
+    const remoteContainer = this.remoteMediaRef.current;
+    const localContainer = this.localMediaRef.current;
 
-    this.sendWidgetEvent(
-      "ROOM_CONNECTED",
-      "INFO",
-      "Connected to Twilio room",
-      {
-        roomName: room.name,
-        identity: identity
-      }
-    );
+    // Attach local camera feed inside DOM reference if elements exist
+    if (localContainer && this.localTracks.length > 0) {
+      this.localTracks.forEach(track => this.attachTrack(track, localContainer));
+    }
 
-    const remoteMediaContainer = document.querySelector('div.twilio-video div.remote-media');
-
-    // Attach existing participants
+    // Map existing remote participants inside room context topology
     room.participants.forEach(participant => {
-      this.log("Already in Room: '" + participant.identity + "'");
-      if (remoteMediaContainer) {
-        this.participantConnected(participant, remoteMediaContainer);
-      }
+      this.handleParticipantConnected(participant, remoteContainer);
     });
 
-    // Listen for new participants
-    const participantConnectedHandler = (participant) => {
-      this.log("Remote participant connected: '" + participant.identity + "'");
-
-      this.sendWidgetEvent(
-        "PARTICIPANT_CONNECTED",
-        "INFO",
-        "Remote participant connected",
-        {
-          participantIdentity: participant.identity
-        }
-      );
-
+    // Subscribed Event Track Listeners
+    room.on('participantConnected', (participant) => {
+      this.log(`Remote pipeline connected: ${participant.identity}`);
+      this.handleParticipantConnected(participant, remoteContainer);
       this.setState({ participantCount: this.activeRoom.participants.size });
+    });
 
-      if (remoteMediaContainer) {
-        this.participantConnected(participant, remoteMediaContainer);
-      }
-    };
-
-    const participantDisconnectedHandler = (participant) => {
-      this.sendWidgetEvent(
-        "PARTICIPANT_DISCONNECTED",
-        "INFO",
-        "Remote participant disconnected",
-        {
-          participantIdentity: participant.identity
-        }
-      );
-
-      this.log("Remote participant disconnected: '" + participant.identity + "'");
+    room.on('participantDisconnected', (participant) => {
+      this.log(`Remote participant left: ${participant.identity}`);
+      this.handleParticipantDisconnected(participant);
       this.setState({ participantCount: this.activeRoom.participants.size });
-      this.detachParticipantTracks(participant);
-      this.removeParticipantContainer(participant);
-    };
+    });
 
-    const roomDisconnectedHandler = () => {
-      this.log('Left the room');
+    room.once('disconnected', () => {
+      this.leaveRoom();
+    });
+  }
 
-      this.sendWidgetEvent(
-        "ROOM_DISCONNECTED",
-        "INFO",
-        "Disconnected from Twilio room"
-      );
+  handleParticipantConnected(participant, container) {
+    if (!container || !this._isMounted) return;
 
-      // Clean up all participants
-      try {
-        this.detachParticipantTracks(this.activeRoom.localParticipant);
-        Array.from(this.activeRoom.participants.values()).forEach(participant => {
-          this.detachParticipantTracks(participant);
-          this.removeParticipantContainer(participant);
-        });
-      } catch (e) {
-        console.error("Error cleaning up participants", e);
-      }
+    // Remove old wrappers if matching key collisions occur
+    if (this.participantContainers.has(participant.identity)) {
+      this.handleParticipantDisconnected(participant);
+    }
 
-      this.stopLocalTracks();
-      this.clearPreviewContainer();
+    const pContainer = document.createElement('div');
+    pContainer.className = 'participant-container';
+    
+    const tracksContainer = document.createElement('div');
+    tracksContainer.className = 'participant-tracks';
+    
+    const nameLabel = document.createElement('div');
+    nameLabel.className = 'participant-name';
+    nameLabel.textContent = participant.identity;
 
-      this.activeRoom = null;
-      this.joinRoomToggle = false;
-      this.previewToggle = false;
-      this.connectionInProgress = false;
+    pContainer.appendChild(tracksContainer);
+    pContainer.appendChild(nameLabel);
+    container.appendChild(pContainer);
 
-      this.setState({ isMicrophoneMuted: false, isCameraMuted: false, participantCount: 0 });
-      this.updateConnectionState();
-    };
+    this.participantContainers.set(participant.identity, pContainer);
 
-    room.once('participantConnected', participantConnectedHandler);
-    room.once('participantDisconnected', participantDisconnectedHandler);
-    room.once('disconnected', roomDisconnectedHandler);
+    const trackSubscribed = (track) => this.attachTrack(track, tracksContainer);
+    const trackUnsubscribed = (track) => this.detachTrack(track);
+
+    participant.tracks.forEach(pub => {
+      if (pub.isSubscribed) trackSubscribed(pub.track);
+    });
+
+    participant.on('trackSubscribed', trackSubscribed);
+    participant.on('trackUnsubscribed', trackUnsubscribed);
+  }
+
+  handleParticipantDisconnected(participant) {
+    const container = this.participantContainers.get(participant.identity);
+    if (container) {
+      container.remove();
+      this.participantContainers.delete(participant.identity);
+    }
+    participant.removeAllListeners();
   }
 
   handleError(message, error) {
-    const fullMessage = error?.message
-      ? message + ": " + error.message
-      : message;
-
     this.connectionInProgress = false;
-    console.error(fullMessage, error || "");
-    this.log(fullMessage);
-
-    this.sendWidgetEvent(
-      "FATAL_ERROR",
-      "ERROR",
-      fullMessage,
-      {
-        errorName: error?.name || "",
-        errorCode: error?.code || "",
-        errorMessage: error?.message || ""
-      }
-    );
-
-    this.updateConnectionState();
+    this.leaveRoom();
+    this.log(`${message}: ${error?.message || "Unknown Exception Error Context"}`);
+    
+    this.sendWidgetEvent("FATAL_ERROR", "ERROR", message, {
+      errorMessage: error?.message || ""
+    });
   }
 
   handleFocusLost() {
-    if (!this.focusLost) {
-      this.focusLost = true;
-      this.log("Focus lost");
-
-      this.sendWidgetEvent(
-        "FOCUS_LOST",
-        "WARNING",
-        "Browser focus lost or page became hidden"
-      );
-    }
+    this.log("Focus context minimized out of browser horizon");
+    this.sendWidgetEvent("FOCUS_LOST", "WARNING", "App interface context shifted target out of focal view");
   }
 
   handleFocusReturned() {
-    if (this.focusLost) {
-      this.focusLost = false;
-      this.log("Focus returned");
-
-      this.sendWidgetEvent(
-        "FOCUS_RETURNED",
-        "INFO",
-        "Browser focus returned or page became visible"
-      );
-    }
-  }
-
-  getBrowserInfo() {
-    return navigator.userAgent || "";
+    this.log("Focus target interactive scope regained");
+    this.sendWidgetEvent("FOCUS_RETURNED", "INFO", "Interface view restored active state context");
   }
 
   render() {
     const { showDiagnostics, showFeatureList, participantSide } = this.props;
     const { connectionState, isMicrophoneMuted, isCameraMuted, participantCount } = this.state;
     const isConnected = connectionState === "Connected";
+    const isPreview = connectionState === "Preview";
 
     return (
       <div className="twilio-video">
         <div className="twilio-controls">
-          {/* Status Indicator */}
           <div className={`twilio-status-indicator ${connectionState.toLowerCase()}`}>
             <span className="twilio-status-dot"></span>
             <span className="twilio-status-text">
-              {isConnected ? `Connected (${participantCount} ${participantCount === 1 ? 'participant' : 'participants'})` : connectionState}
+              {isConnected ? `Connected (${participantCount} Peer${participantCount === 1 ? '' : 's'})` : connectionState}
             </span>
           </div>
 
-          {/* Media Controls */}
           {isConnected && (
             <div className="twilio-media-controls">
               <button
                 className={`twilio-control-btn twilio-microphone-btn ${isMicrophoneMuted ? 'muted' : 'active'}`}
                 onClick={() => this.toggleMicrophone()}
-                title={isMicrophoneMuted ? 'Unmute microphone' : 'Mute microphone'}
               >
-                <span className="twilio-icon">🎤</span>
+                <span className="twilio-icon">{isMicrophoneMuted ? '🔇' : '🎤'}</span>
                 <span className="twilio-label">{isMicrophoneMuted ? 'Muted' : 'Mic'}</span>
               </button>
 
               <button
                 className={`twilio-control-btn twilio-camera-btn ${isCameraMuted ? 'muted' : 'active'}`}
                 onClick={() => this.toggleCamera()}
-                title={isCameraMuted ? 'Turn on camera' : 'Turn off camera'}
               >
-                <span className="twilio-icon">📹</span>
+                <span className="twilio-icon">{isCameraMuted ? '❌📹' : '📹'}</span>
                 <span className="twilio-label">{isCameraMuted ? 'Off' : 'Camera'}</span>
               </button>
             </div>
           )}
         </div>
 
-        <div className="media remote-media"></div>
-        <div className="media local-media"></div>
-        <div className="log"></div>
+        {/* Explicitly managed layouts bound inside UI element structures directly via Refs */}
+        <div ref={this.remoteMediaRef} className="media remote-media" style={{ display: isConnected ? "flex" : "none" }}></div>
+        <div ref={this.localMediaRef} className="media local-media" style={{ display: (isPreview || isConnected) ? "block" : "none" }}></div>
 
-        {showDiagnostics === true && (
-          <div className="twilio-diagnostics">
-            <div><strong>ISR Secure Video Widget</strong></div>
-            <div>Version: {WIDGET_VERSION}</div>
-            <div>Participant side: {participantSide}</div>
-            <div>Connection state: {connectionState}</div>
-            <div>Twilio SDK: {TWILIO_SDK_VERSION}</div>
-            <div>Browser: {this.getBrowserInfo()}</div>
-          </div>
-        )}
+        <div ref={this.logRef} className="log"></div>
 
-        {showFeatureList === true && (
+        {showDiagnostics && (
           <div className="twilio-diagnostics">
-            <div><strong>Supported Features</strong></div>
-            <ul>
-              {WIDGET_FEATURES.map(feature => (
-                <li key={feature}>{feature}</li>
-              ))}
-            </ul>
+            <div><strong>ISR Secure Video Platform</strong></div>
+            <div>Widget Environment: {WIDGET_VERSION}</div>
+            <div>Topology Node Assignment: {participantSide}</div>
+            <div>State Context Engine: {connectionState}</div>
+            <div>Core Twilio Integration Bundle: {TWILIO_SDK_VERSION}</div>
           </div>
         )}
       </div>
