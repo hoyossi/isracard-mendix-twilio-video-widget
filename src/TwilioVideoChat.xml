@@ -105,6 +105,44 @@
                 Otherwise, will render it into this widget content (div.log).</description>
             </property>
         </propertyGroup>
+        <propertyGroup caption="Localization">
+            <property key="captionSessionDisconnected" type="string" required="true" defaultValue="Session: Disconnected">
+                <caption>Disconnected Status Text</caption>
+                <description>Text displayed when the call is disconnected.</description>
+            </property>
+            <property key="captionSessionConnecting" type="string" required="true" defaultValue="Session: Connecting...">
+                <caption>Connecting Status Text</caption>
+                <description>Text displayed while initializing the connection handshake.</description>
+            </property>
+            <property key="captionSessionConnected" type="string" required="true" defaultValue="Room Session Active">
+                <caption>Connected Status Text</caption>
+                <description>Text displayed when successfully inside a live room.</description>
+            </property>
+            <property key="captionDisconnectCall" type="string" required="true" defaultValue="Disconnect Verification Call">
+                <caption>Disconnect Button Text</caption>
+                <description>Label for the customer's disconnect action button.</description>
+            </property>
+            <property key="captionReconnectCall" type="string" required="true" defaultValue="Reconnect Verification Session">
+                <caption>Reconnect Button Text</caption>
+                <description>Label for the customer's reconnect action button.</description>
+            </property>
+            <property key="captionMicActive" type="string" required="true" defaultValue="Mic Active">
+                <caption>Mic Active Badge</caption>
+                <description>Passive badge description text indicating live audio capture.</description>
+            </property>
+            <property key="captionMicMuted" type="string" required="true" defaultValue="Mic Muted">
+                <caption>Mic Muted Badge</caption>
+                <description>Passive badge description text indicating muted audio stream.</description>
+            </property>
+            <property key="captionCamActive" type="string" required="true" defaultValue="Camera Active">
+                <caption>Camera Active Badge</caption>
+                <description>Passive badge description text indicating live video capture.</description>
+            </property>
+            <property key="captionCamOff" type="string" required="true" defaultValue="Camera Off">
+                <caption>Camera Off Badge</caption>
+                <description>Passive badge description text indicating stopped camera streaming.</description>
+            </property>
+        </propertyGroup>
         <propertyGroup caption="About / Diagnostics (v1.4.0)">
             <property key="showDiagnostics"
                     type="boolean"
