@@ -1,475 +1,249 @@
-/* Base layout */
-div.twilio-video {
+/* Structural Base Resets */
+.isr-layout-root {
   display: flex;
   flex-direction: column;
   width: 100%;
   height: 100%;
-  background: #f5f5f5;
+  background: #111827;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  overflow: hidden;
 }
 
-/* Media containers */
-div.twilio-video div.media {
-  max-width: 100%;
+/* Fluid Responsive Video Containers */
+.video-viewport-container {
   flex: 1;
-  overflow: hidden;
-  background: #000;
-}
-
-div.twilio-video div.remote-media {
   display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  padding: 8px;
-  background: #1a1a1a;
-}
-
-div.twilio-video div.local-media {
+  flex-direction: column;
+  background: #000000;
   position: relative;
-  width: 100%;
-  min-height: 300px;
-  background: #000;
-  border-radius: 8px;
   overflow: hidden;
-  margin: 8px;
-  flex: 0 0 auto;
 }
 
-div.twilio-video div.media video {
-  max-width: 100%;
+/* Drops the "Black Stripe/Area" by forcing active conditional elements to fill the panel layout canvas context */
+.media.remote-media.isr-agent-canvas,
+.media.local-media.isr-customer-canvas {
   width: 100%;
   height: 100%;
-  object-fit: cover;
+  max-height: 100%;
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #000000;
+  margin: 0 !important;
+  padding: 0 !important;
+  border-radius: 0 !important;
 }
 
 .media video {
+  width: 100% !important;
+  height: 100% !important;
   max-width: 100%;
+  max-height: 100%;
+  object-fit: contain; /* Enforces clean ratio scaling mapping without video profile clipping lines */
+  background: #000000;
 }
 
-/* Participant styling */
-div.twilio-video div.participant-container {
-  flex: 1;
-  min-width: 300px;
-  background: #000;
-  border-radius: 8px;
-  overflow: hidden;
-  position: relative;
-  display: flex;
-  flex-direction: column;
+.mode-customer .video-viewport-container {
+  min-height: 450px;
 }
 
-div.twilio-video div.participant-tracks {
-  flex: 1;
-  background: #000;
-}
-
-div.twilio-video div.participant-name {
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  padding: 8px 12px;
-  background: rgba(0, 0, 0, 0.7);
-  color: white;
-  font-size: 13px;
-  font-weight: 500;
-  z-index: 10;
-}
-
-/* Control panel */
+/* Connection Header Status Tracker Panel */
 .twilio-controls {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 12px 16px;
-  background: linear-gradient(135deg, #1e3a5f 0%, #2c5aa0 100%);
-  border-bottom: 2px solid #0f2847;
-  gap: 16px;
-  flex-wrap: wrap;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  padding: 14px 20px;
+  background: #1f2937;
+  border-bottom: 1px solid #374151;
+  z-index: 30;
 }
 
-/* Status indicator */
 .twilio-status-indicator {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 8px 16px;
-  background: rgba(255, 255, 255, 0.1);
-  border-radius: 24px;
-  backdrop-filter: blur(10px);
-  flex: 1;
-  min-width: 200px;
+  gap: 10px;
 }
 
 .twilio-status-dot {
-  display: inline-block;
   width: 10px;
   height: 10px;
   border-radius: 50%;
-  animation: pulse-status 2s ease-in-out infinite;
+  display: inline-block;
 }
 
-.twilio-status-indicator.connected .twilio-status-dot {
-  background-color: #4ade80;
-  box-shadow: 0 0 8px rgba(74, 222, 128, 0.6);
-}
-
-.twilio-status-indicator.disconnected .twilio-status-dot {
-  background-color: #ef4444;
-  animation: none;
-}
-
-.twilio-status-indicator.connecting .twilio-status-dot {
-  background-color: #facc15;
-  animation: pulse-status 1s ease-in-out infinite;
-}
-
-.twilio-status-indicator.preview .twilio-status-dot {
-  background-color: #06b6d4;
-  animation: pulse-status 1.5s ease-in-out infinite;
-}
+.connected .twilio-status-dot { background-color: #10b981; box-shadow: 0 0 8px #10b981; }
+.disconnected .twilio-status-dot { background-color: #ef4444; }
+.connecting .twilio-status-dot { background-color: #f59e0b; }
+.preview .twilio-status-dot { background-color: #3b82f6; }
 
 .twilio-status-text {
-  color: white;
+  color: #f3f4f6;
   font-size: 14px;
   font-weight: 500;
-  letter-spacing: 0.5px;
 }
 
-@keyframes pulse-status {
-  0%, 100% {
-    opacity: 1;
-  }
-  50% {
-    opacity: 0.6;
-  }
-}
-
-/* Media controls container */
-.twilio-media-controls {
+/* Customer Side Passive Status Badge Rows */
+.customer-info-badges {
   display: flex;
-  gap: 8px;
-  align-items: center;
+  gap: 10px;
 }
 
-/* Control button styling */
-.twilio-control-btn {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 10px 16px;
-  background: rgba(255, 255, 255, 0.2);
-  border: 2px solid rgba(255, 255, 255, 0.3);
-  border-radius: 24px;
-  color: white;
-  cursor: pointer;
-  font-size: 14px;
+.badge-indicator {
+  padding: 6px 14px;
+  border-radius: 20px;
+  font-size: 12px;
   font-weight: 600;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  backdrop-filter: blur(10px);
-  outline: none;
-  user-select: none;
-}
-
-.twilio-control-btn:hover:not(:disabled) {
-  background: rgba(255, 255, 255, 0.25);
-  border-color: rgba(255, 255, 255, 0.5);
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-}
-
-.twilio-control-btn:active:not(:disabled) {
-  transform: translateY(0);
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
-}
-
-.twilio-control-btn.active {
-  background: rgba(74, 222, 128, 0.3);
-  border-color: rgba(74, 222, 128, 0.6);
-  color: #4ade80;
-}
-
-.twilio-control-btn.active:hover {
-  background: rgba(74, 222, 128, 0.4);
-  border-color: #4ade80;
-  box-shadow: 0 4px 16px rgba(74, 222, 128, 0.3);
-}
-
-.twilio-control-btn.muted {
-  background: rgba(239, 68, 68, 0.3);
-  border-color: rgba(239, 68, 68, 0.6);
-  color: #fca5a5;
-}
-
-.twilio-control-btn.muted:hover {
-  background: rgba(239, 68, 68, 0.4);
-  border-color: #fca5a5;
-  box-shadow: 0 4px 16px rgba(239, 68, 68, 0.3);
-}
-
-.twilio-control-btn:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-.twilio-icon {
-  font-size: 18px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.twilio-label {
-  font-size: 13px;
   letter-spacing: 0.3px;
 }
 
-/* Microphone button specific */
-.twilio-microphone-btn.active {
-  color: #4ade80;
+.badge-indicator.state-on {
+  background: rgba(16, 185, 129, 0.15);
+  color: #34d399;
+  border: 1px solid rgba(16, 185, 129, 0.3);
 }
 
-.twilio-microphone-btn.muted {
-  color: #fca5a5;
+.badge-indicator.state-off {
+  background: rgba(239, 68, 68, 0.15);
+  color: #f87171;
+  border: 1px solid rgba(239, 68, 68, 0.3);
 }
 
-/* Camera button specific */
-.twilio-camera-btn.active {
-  color: #4ade80;
-}
-
-.twilio-camera-btn.muted {
-  color: #fca5a5;
-}
-
-/* Log area styling */
-div.twilio-video div.log {
-  height: 150px;
-  overflow-y: auto;
-  padding: 10px;
+/* Agent Administrative Control Dashboard Panel Layout */
+.agent-administrative-dashboard-panel {
   background: #1f2937;
   border-top: 1px solid #374151;
-  font-size: 11px;
-  font-family: 'Courier New', monospace;
-  line-height: 1.4;
-  display: block;
-  color: #d1d5db;
-  word-break: break-word;
-  white-space: pre-wrap;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  z-index: 40;
 }
 
-div.twilio-video div.log p {
-  margin: 2px 0;
-  padding: 2px 0;
-  color: #10b981;
-  border-left: 2px solid #3b82f6;
-  padding-left: 6px;
-}
-
-/* Diagnostics panel */
-.twilio-diagnostics {
-  margin-top: 12px;
-  padding: 12px;
-  border: 1px solid #d7dde5;
-  border-radius: 8px;
-  background: linear-gradient(135deg, #f7f9fb 0%, #eef2f5 100%);
-  font-size: 13px;
-  line-height: 1.6;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
-}
-
-.twilio-diagnostics div {
-  margin: 4px 0;
-  color: #374151;
-}
-
-.twilio-diagnostics div strong {
-  color: #1f2937;
-  font-weight: 600;
-}
-
-.twilio-diagnostics ul {
-  margin: 6px 0 0 18px;
-  padding: 0;
-  list-style: none;
-}
-
-.twilio-diagnostics li {
-  margin: 4px 0;
-  padding-left: 12px;
-  position: relative;
-  color: #4b5563;
-}
-
-.twilio-diagnostics li:before {
-  content: "✓";
-  position: absolute;
-  left: 0;
-  color: #10b981;
-  font-weight: bold;
-}
-
-/* Responsive design */
-@media (max-width: 768px) {
-  .twilio-controls {
-    padding: 10px 12px;
-    gap: 8px;
-  }
-
-  .twilio-status-indicator {
-    min-width: auto;
-    padding: 6px 12px;
-    font-size: 12px;
-  }
-
-  .twilio-control-btn {
-    padding: 8px 12px;
-    font-size: 12px;
-    gap: 4px;
-  }
-
-  .twilio-icon {
-    font-size: 16px;
-  }
-
-  .twilio-label {
-    display: none;
-  }
-
-  div.twilio-video div.local-media {
-    width: 100%;
-    min-height: 200px;
-  }
-
-  div.twilio-video div.participant-container {
-    min-width: 200px;
-  }
-
-  div.twilio-video div.log {
-    height: 120px;
-    font-size: 10px;
-    padding: 8px;
-  }
-}
-
-@media (max-width: 480px) {
-  .twilio-controls {
-    flex-direction: column;
-    align-items: stretch;
-    padding: 8px;
-    gap: 6px;
-  }
-
-  .twilio-status-indicator {
-    width: 100%;
-    justify-content: center;
-    padding: 8px;
-    font-size: 12px;
-  }
-
-  .twilio-media-controls {
-    width: 100%;
-    justify-content: space-around;
-  }
-
-  .twilio-control-btn {
-    flex: 0 1 48%;
-    justify-content: center;
-    min-width: 0;
-    padding: 10px 8px;
-  }
-
-  div.twilio-video {
-    flex-direction: column;
-    height: auto;
-  }
-
-  div.twilio-video div.remote-media {
-    min-height: 250px;
-    order: 2;
-  }
-
-  div.twilio-video div.local-media {
-    width: 100%;
-    min-height: 200px;
-    margin: 4px;
-    order: 3;
-  }
-
-  div.twilio-video div.log {
-    height: 100px;
-    font-size: 9px;
-    padding: 6px;
-    order: 4;
-  }
-
-  .twilio-diagnostics {
-    margin-top: 8px;
-    padding: 8px;
-    font-size: 11px;
-  }
-}
-
-/* Print styles */
-@media print {
-  .twilio-controls {
-    display: none;
-  }
-}
-
-
-.agent-remote-dashboard {
+.dashboard-action-row {
   display: flex;
   align-items: center;
   gap: 10px;
-  background: rgba(255, 255, 255, 0.1);
-  padding: 4px 12px;
-  border-radius: 6px;
-  border: 1px solid rgba(255, 255, 255, 0.15);
+  flex-wrap: wrap;
 }
 
-.dashboard-title {
-  color: #ffffff;
+.row-group-label {
+  color: #9ca3af;
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.row-group-label.separator {
+  margin-left: 15px;
+  border-left: 1px solid #4b5563;
+  padding-left: 15px;
+}
+
+/* Administrative Command Action Override Buttons */
+.twilio-control-btn {
+  padding: 8px 16px;
+  border-radius: 6px;
   font-size: 13px;
   font-weight: 600;
-  margin-right: 4px;
+  cursor: pointer;
+  transition: all 0.15s ease-in-out;
+  border: none;
+  outline: none;
+  display: flex;
+  align-items: center;
+  gap: 6px;
 }
 
-.remote-override-btn {
-  background: #2b394a;
-  border: 1px solid #40536b;
-  color: #fff;
-  transition: all 0.2s ease-in-out;
+.override-btn.active { background: #065f46; color: #34d399; }
+.override-btn.active:hover { background: #047857; }
+.override-btn.muted { background: #7f1d1d; color: #f87171; }
+.override-btn.muted:hover { background: #991b1b; }
+
+/* Utilities Operational Control Subsystem Mapping Panel Row */
+.utilities-row {
+  margin-top: 4px;
+  padding-top: 12px;
+  border-top: 1px solid #2d3748;
 }
 
-.remote-override-btn.target-cam-on:hover {
-  background: #107c41 !important;
-  border-color: #107c41;
+.utility-action-btn { background: #374151; color: #f3f4f6; border: 1px solid #4b5563; }
+.utility-action-btn:hover { background: #4b5563; }
+
+.screenshot-btn { background: #2563eb !important; border-color: #3b82f6 !important; }
+.screenshot-btn:hover { background: #1d4ed8 !important; }
+
+.terminate-btn { background: #dc2626 !important; border-color: #ef4444 !important; margin-left: auto; }
+.terminate-btn:hover { background: #b91c1c !important; }
+
+/* Technical Diagnostics Panel Elements layout */
+.twilio-diagnostics-data-grid {
+  background: #111827;
+  border: 1px solid #374151;
+  border-radius: 6px;
+  padding: 12px;
+  font-size: 12px;
+  color: #9ca3af;
+  line-height: 1.5;
 }
 
-.remote-override-btn.target-cam-off:hover {
-  background: #a80000 !important;
-  border-color: #a80000;
+.twilio-diagnostics-data-grid strong {
+  color: #ffffff;
 }
 
-/* Responsive overrides for the Agent Control Dashboard */
+.metrics-wrapper {
+  display: flex;
+  gap: 20px;
+  margin-top: 6px;
+  flex-wrap: wrap;
+  color: #9ca3af;
+}
+
+/* Expandable System Event Terminal Log Panel Output Area */
+.system-events-terminal-log {
+  height: 120px;
+  overflow-y: auto;
+  background: #000000 !important;
+  border: 1px solid #374151;
+  border-radius: 6px;
+  padding: 10px;
+  font-family: "Courier New", Courier, monospace;
+  font-size: 11px;
+  color: #38bdf8;
+}
+
+.system-events-terminal-log p {
+  margin: 4px 0;
+  border-left: 3px solid #0284c7;
+  padding-left: 8px;
+}
+
+/* Smartphone Layout Scaling Adaptations */
 @media (max-width: 480px) {
-  .agent-remote-dashboard {
+  .agent-administrative-dashboard-panel {
+    padding: 10px;
+  }
+  
+  .dashboard-action-row {
     flex-direction: column;
-    width: 100%;
     align-items: stretch;
     gap: 6px;
-    padding: 8px;
   }
   
-  .dashboard-title {
-    text-align: center;
-    margin-bottom: 2px;
+  .row-group-label.separator {
+    margin-left: 0;
+    border-left: none;
+    padding-left: 0;
+    margin-top: 4px;
   }
   
-  .remote-override-btn {
+  .twilio-control-btn {
     width: 100%;
     justify-content: center;
-    padding: 10px;
+  }
+  
+  .terminate-btn {
+    margin-left: 0;
   }
 }
