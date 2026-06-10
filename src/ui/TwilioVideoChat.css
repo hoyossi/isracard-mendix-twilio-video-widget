@@ -416,3 +416,60 @@ div.twilio-video div.log p {
     display: none;
   }
 }
+
+
+.agent-remote-dashboard {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: rgba(255, 255, 255, 0.1);
+  padding: 4px 12px;
+  border-radius: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+.dashboard-title {
+  color: #ffffff;
+  font-size: 13px;
+  font-weight: 600;
+  margin-right: 4px;
+}
+
+.remote-override-btn {
+  background: #2b394a;
+  border: 1px solid #40536b;
+  color: #fff;
+  transition: all 0.2s ease-in-out;
+}
+
+.remote-override-btn.target-cam-on:hover {
+  background: #107c41 !important;
+  border-color: #107c41;
+}
+
+.remote-override-btn.target-cam-off:hover {
+  background: #a80000 !important;
+  border-color: #a80000;
+}
+
+/* Responsive overrides for the Agent Control Dashboard */
+@media (max-width: 480px) {
+  .agent-remote-dashboard {
+    flex-direction: column;
+    width: 100%;
+    align-items: stretch;
+    gap: 6px;
+    padding: 8px;
+  }
+  
+  .dashboard-title {
+    text-align: center;
+    margin-bottom: 2px;
+  }
+  
+  .remote-override-btn {
+    width: 100%;
+    justify-content: center;
+    padding: 10px;
+  }
+}
