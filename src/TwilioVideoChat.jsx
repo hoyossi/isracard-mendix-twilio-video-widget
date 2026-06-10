@@ -146,11 +146,11 @@ class TwilioVideoChat extends Component {
       if (shouldMute) {
         audioTrackPub.track.disable();
         this.setState({ isMicrophoneMuted: true });
-        this.log("Microphone muted via administrative override directive.");
+        this.log("Microphone muted via override instruction directive.");
       } else {
         audioTrackPub.track.enable();
         this.setState({ isMicrophoneMuted: false });
-        this.log("Microphone unmuted via administrative override directive.");
+        this.log("Microphone unmuted via override instruction directive.");
       }
     } catch (e) {
       this.handleError("Error modifying microphone track state", e);
@@ -170,7 +170,7 @@ class TwilioVideoChat extends Component {
           videoTrackPub.track.stop();
         }
         this.setState({ isCameraMuted: true });
-        this.log("Webcam hardware streams cleanly stopped.");
+        this.log("Camera hardware lenses cleanly stopped.");
       } else {
         const videoWidth = this.getIntegerProp("videoWidth", 640);
         const videoHeight = this.getIntegerProp("videoHeight", 480);
@@ -199,11 +199,11 @@ class TwilioVideoChat extends Component {
             }
             this.attachTrack(newTrack, localContainer);
           }
-          this.log("Webcam hardware streams successfully unmuted and re-published.");
+          this.log("Camera hardware re-published successfully.");
         });
       }
     } catch (e) {
-      this.handleError("Error executing camera override track transaction", e);
+      this.handleError("Error executing camera track transaction", e);
     }
   }
 
@@ -213,7 +213,7 @@ class TwilioVideoChat extends Component {
     if (this.localDataTrack) {
       const payload = JSON.stringify({ command: commandName, value: targetValue });
       this.localDataTrack.send(payload);
-      this.log(`Dispatched remote payload command: ${commandName} -> ${targetValue}`);
+      this.log(`Dispatched remote control signaling payload: ${commandName} -> ${targetValue}`);
     } else {
       this.log("Command rejected: WebRTC Signaling Data Track is offline.");
     }
@@ -295,7 +295,7 @@ class TwilioVideoChat extends Component {
             track.stop(); 
           }
         } catch (e) {
-          console.error("Error stopping local media track clone", e);
+          console.error("Error stopping local media track", e);
         }
       });
     }
@@ -310,7 +310,7 @@ class TwilioVideoChat extends Component {
           }
         });
       } catch (err) {
-        console.error("Trace track breakdown array exception", err);
+        console.error("Trace track parsing trace check failure", err);
       }
     }
     this.clearPreviewContainer();
@@ -324,7 +324,7 @@ class TwilioVideoChat extends Component {
         container.appendChild(attachedElement);
       }
     } catch (e) {
-      console.error("DOM Node media track appending failed", e);
+      console.error("DOM Media track layout node injection failed", e);
     }
   }
 
@@ -333,7 +333,7 @@ class TwilioVideoChat extends Component {
     try {
       track.detach().forEach(element => element?.remove());
     } catch (e) {
-      console.error("Clean track element removal trace exception", e);
+      console.error("Clean track node structure removal failure", e);
     }
   }
 
@@ -362,7 +362,7 @@ class TwilioVideoChat extends Component {
     const connectOptions = { name: roomName, logLevel: "warn", tracks: [this.localDataTrack] };
 
     if (isAgent) {
-      this.log("Agent session initialization routing active.");
+      this.log("Agent interface session loading context linked.");
       try {
         const room = await Video.connect(token, connectOptions);
         if (!this._isMounted) {
@@ -371,7 +371,7 @@ class TwilioVideoChat extends Component {
         }
         this.roomJoined(room, identity);
       } catch (error) {
-        this.handleError("Agent console signaling bridge registration failure", error);
+        this.handleError("Agent control signaling bridge registration failure", error);
       }
       return;
     }
@@ -387,7 +387,7 @@ class TwilioVideoChat extends Component {
             video: { width: videoWidth, height: videoHeight }
           });
         } catch (err) {
-          this.log("Webcam drivers blocked by operating system sandbox policies.");
+          this.log("Hardware media drivers busy or blocked by host policies.");
           this.localTracks = [];
         }
       }
@@ -401,7 +401,7 @@ class TwilioVideoChat extends Component {
       const room = await Video.connect(token, connectOptions);
       this.roomJoined(room, identity);
     } catch (error) {
-      this.handleError("Customer room handshake initialization failure", error);
+      this.handleError("Customer room handshake linking channel initiation failure", error);
     }
   }
 
@@ -415,7 +415,7 @@ class TwilioVideoChat extends Component {
       participantCount: room.participants.size
     }, () => this.updateConnectionState());
 
-    this.log(`Successfully connected inside validation session room. Client identity: ${identity}`);
+    this.log(`Successfully mapped room channel allocation block. Client Identity: ${identity}`);
     
     const remoteContainer = this.remoteMediaRef.current;
     const localContainer = this.localMediaRef.current;
@@ -475,7 +475,7 @@ class TwilioVideoChat extends Component {
         track.on('message', (data) => {
           try {
             const parsed = JSON.parse(data);
-            this.log(`Decoded real-time signaling transaction directive: ${parsed.command}`);
+            this.log(`Decoded real-time remote instruction set command: ${parsed.command}`);
             
             if (!this.isAgentParticipant()) {
               if (parsed.command === "SET_CAMERA") {
@@ -485,7 +485,7 @@ class TwilioVideoChat extends Component {
                 this.toggleMicrophone(parsed.value);
               }
               if (parsed.command === "TERMINATE_SESSION") {
-                this.log("Agent closed the current call session. Leaving room safely.");
+                this.log("Agent triggered session termination. Hanging up link channel safely.");
                 this.leaveRoom();
               }
             }
@@ -524,7 +524,7 @@ class TwilioVideoChat extends Component {
   handleError(message, error) {
     this.connectionInProgress = false;
     this.leaveRoom();
-    this.log(`${message}: ${error?.message || "Unknown Exception Instance Trace"}`);
+    this.log(`${message}: ${error?.message || "Unknown Platform Error Exception"}`);
   }
 
   handleFocusLost() {
@@ -535,13 +535,50 @@ class TwilioVideoChat extends Component {
     this.sendWidgetEvent("FOCUS_RETURNED", "INFO", "Interface view restored active state context");
   }
 
+  async showPreview() {
+    if (this.isAgentParticipant()) {
+      this.log("Preview window rejected: Current instance role is Agent.");
+      return;
+    }
+
+    const videoWidth = this.getIntegerProp("videoWidth", 640);
+    const videoHeight = this.getIntegerProp("videoHeight", 480);
+
+    try {
+      this.stopLocalTracks();
+      
+      this.localTracks = await Video.createLocalTracks({
+        audio: false,
+        video: { width: videoWidth, height: videoHeight }
+      });
+
+      if (!this._isMounted) {
+        this.stopLocalTracks();
+        return;
+      }
+
+      const container = this.localMediaRef.current;
+      if (container) {
+        this.localTracks.forEach(track => this.attachTrack(track, container));
+      }
+      this.updateConnectionState();
+    } catch (error) {
+      this.log(`Preview window creation runtime failure: ${error?.message}`);
+    }
+  }
+
+  hidePreview() {
+    this.stopLocalTracks();
+    this.updateConnectionState();
+  }
+
   leaveRoom() {
     this.connectionInProgress = false;
     if (this.activeRoom) {
       try {
         this.activeRoom.disconnect();
       } catch (e) {
-        console.error("Error breaking down active WebRTC session topology", e);
+        console.error("Error tearing down current WebRTC channel layer", e);
       }
       this.activeRoom = null;
     }
@@ -562,16 +599,16 @@ class TwilioVideoChat extends Component {
     return (
       <div className={`twilio-video isr-layout-root ${isAgent ? 'mode-agent' : 'mode-customer'}`}>
         
-        {/* UPPER PANEL: Core Status & Metadata Sync Header */}
+        {/* UPPER PANEL: Core Status & Metadata Sync Header Bar */}
         <div className="twilio-controls">
           <div className={`twilio-status-indicator ${connectionState.toLowerCase()}`}>
             <span className="twilio-status-dot"></span>
             <span className="twilio-status-text">
-              {isConnected ? `Room Session Active (Peers: ${participantCount})` : `Connection: ${connectionState}`}
+              {isConnected ? `Room Session Active (Peers: ${participantCount})` : `Connection Status: ${connectionState}`}
             </span>
           </div>
 
-          {/* Customer Passive Status Panel (Visible only on Customer side) */}
+          {/* Customer Side Passive Read-Only Information Dashboard Badges Panel */}
           {isConnected && !isAgent && (
             <div className="customer-info-badges">
               <span className={`badge-indicator ${isMicrophoneMuted ? 'state-off' : 'state-on'}`}>
@@ -584,24 +621,24 @@ class TwilioVideoChat extends Component {
           )}
         </div>
 
-        {/* MAIN PANEL: Clean-Cut Layout Frames (Eliminates all stray placeholder black areas) */}
+        {/* MAIN PANEL: Clean-Cut Fluid Video Canvas Matrix (Hides blank layouts completely) */}
         <div className="video-viewport-container">
-          {/* Agent Canvas: Renders only the incoming customer view stream */}
+          {/* Agent Canvas Dashboard View Frame Panel: Maps Customer incoming streams */}
           {isAgent && isConnected && (
             <div ref={this.remoteMediaRef} className="media remote-media isr-agent-canvas"></div>
           )}
 
-          {/* Customer Canvas: Renders only their own local preview track profile layout canvas */}
+          {/* Customer Canvas Dashboard View Frame Panel: Maps local camera tracking preview frames */}
           {!isAgent && (isPreview || isConnected) && (
             <div ref={this.localMediaRef} className="media local-media isr-customer-canvas"></div>
           )}
         </div>
 
-        {/* LOWER PANEL: Agent Administrative Dashboard Console Layout Control Center */}
+        {/* LOWER PANEL: Agent Operations Dashboard Administrative Control Center Command Panel */}
         {isAgent && isConnected && (
           <div className="agent-administrative-dashboard-panel">
             
-            {/* Dashboard Action Row 1: Real-Time WebRTC Media Overrides Tracking Matrix */}
+            {/* Dashboard Row A: Real-Time WebRTC Media Overrides Tracking Matrix Panel */}
             <div className="dashboard-action-row">
               <span className="row-group-label">Customer Audio:</span>
               <button type="button" className="twilio-control-btn override-btn active" onClick={() => this.sendRemoteControlCommand("SET_MICROPHONE", true)}>🎤 Force Mic ON</button>
@@ -612,27 +649,27 @@ class TwilioVideoChat extends Component {
               <button type="button" className="twilio-control-btn override-btn muted" onClick={() => this.sendRemoteControlCommand("SET_CAMERA", false)}>❌ Cam OFF</button>
             </div>
 
-            {/* Dashboard Action Row 2: Verification Tools Subsystem Command Line Panel */}
+            {/* Dashboard Row B: Verification Tools Subsystem Command Panel Bar */}
             <div className="dashboard-action-row utilities-row">
               <button type="button" className="twilio-control-btn utility-action-btn screenshot-btn" onClick={() => this.captureCustomerScreenshot()}>📸 Take Verification Snapshot</button>
               <button type="button" className="twilio-control-btn utility-action-btn log-toggle-btn" onClick={() => this.setState({ showLogs: !showLogs })}>{showLogs ? "👁️ Hide Event Log" : "👁️ Display Event Log"}</button>
               <button type="button" className="twilio-control-btn utility-action-btn terminate-btn" onClick={() => { this.sendRemoteControlCommand("TERMINATE_SESSION", true); this.leaveRoom(); }}>🛑 End Video Session</button>
             </div>
 
-            {/* Dashboard Action Row 3: Technical Platform Node Metrics Monitor */}
+            {/* Dashboard Row C: Technical Node Metrics Monitor Panel Layer */}
             {showDiagnostics && (
               <div className="twilio-diagnostics-data-grid">
-                <div><strong>ISR Secure Node Verification Platform Engine</strong> | Widget Target Build: {WIDGET_VERSION}</div>
+                <div><strong>ISR Secure Node Verification Platform Engine</strong> | Widget Target Build Version: {WIDGET_VERSION}</div>
                 <div className="metrics-wrapper">
-                  <span>Routing: Agent Dashboard Console</span>
-                  <span>Active Channel Topology: {connectionState}</span>
-                  <span>Twilio Bundle Base: {TWILIO_SDK_VERSION}</span>
-                  <span>Instance Key Hash: {this.instanceId}</span>
+                  <span>Routing Topology: Agent Dashboard Console</span>
+                  <span>Channel Connection Base: {connectionState}</span>
+                  <span>Twilio Bundle Module SDK: {TWILIO_SDK_VERSION}</span>
+                  <span>Instance Context Unique Key Hash: {this.instanceId}</span>
                 </div>
               </div>
             )}
 
-            {/* Dashboard Action Row 4: Expandable System Event Terminal Log Log window */}
+            {/* Dashboard Row D: Expandable System Event Terminal Log Box area */}
             <div ref={this.logRef} className="log system-events-terminal-log" style={{ display: showLogs ? "block" : "none" }}></div>
           </div>
         )}
