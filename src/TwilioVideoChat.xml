@@ -143,6 +143,33 @@
                 <description>Passive badge description text indicating stopped camera streaming.</description>
             </property>
         </propertyGroup>
+        <propertyGroup caption="Action Panel">
+                <property key="agentShowDashboardPanel" type="expression" required="true" defaultValue="true">
+                    <caption>Display Control Panel Dashboard</caption>
+                    <description>Points to an NPE boolean attribute (e.g., $currentObject/ShowDashboardPanel) controlling the lower administrative bar.</description>
+                    <returnType type="Boolean"/>
+                </property>
+                <property key="agentEnableHardwareToggles" type="expression" required="true" defaultValue="true">
+                    <caption>Enable Mic / Cam Remote Toggles</caption>
+                    <description>Points to an NPE boolean attribute controlling visibility of hardware overrides buttons.</description>
+                    <returnType type="Boolean"/>
+                </property>
+                <property key="agentEnableForceReconnect" type="expression" required="true" defaultValue="true">
+                    <caption>Enable Force Reconnect Button</caption>
+                    <description>Points to an NPE boolean attribute controlling the visibility of the 'Force Customer Reconnect' utility button.</description>
+                    <returnType type="Boolean"/>
+                </property>
+                <property key="agentEnableSnapshotBtn" type="expression" required="true" defaultValue="true">
+                    <caption>Enable Take Snapshot Button</caption>
+                    <description>Points to an NPE boolean attribute controlling the visibility of the 'Take Verification Snapshot' button.</description>
+                    <returnType type="Boolean"/>
+                </property>
+                <property key="agentEnableTerminateBtn" type="expression" required="true" defaultValue="true">
+                    <caption>Enable Close All Rooms Button</caption>
+                    <description>Points to an NPE boolean attribute controlling the visibility of the 'Close All Rooms' session termination button.</description>
+                    <returnType type="Boolean"/>
+                </property>
+            </propertyGroup>
         <propertyGroup caption="About / Diagnostics (v1.4.0)">
             <property key="showDiagnostics"
                     type="boolean"
