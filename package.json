@@ -1,7 +1,7 @@
 {
   "name": "twiliovideochat",
   "widgetName": "TwilioVideoChat",
-  "version": "1.2.0",
+  "version": "1.4.1",
   "description": "Enterprise Twilio Video widget for Mendix applications",
   "copyright": "© 2026 Isracard. All Rights Reserved.",
   "author": "Joseph Horvath",
@@ -16,6 +16,7 @@
     "start": "concurrently \"pluggable-widgets-tools start:server --open\" \"npm:dev\"",
     "dev": "pluggable-widgets-tools start:js",
     "build": "pluggable-widgets-tools build:js",
+    "build:release": "npm run build && node rename-mpk.js",
     "lint": "pluggable-widgets-tools lint",
     "lint:fix": "pluggable-widgets-tools lint:fix",
     "prerelease": "npm run lint",

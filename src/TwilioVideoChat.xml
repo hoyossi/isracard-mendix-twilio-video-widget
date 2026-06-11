@@ -27,15 +27,23 @@
                 <returnType type="Boolean" />
             </property>
             <property key="cameraEnabledExpr" type="expression" required="false">
-                <caption>Camera available</caption>
+                <caption>Enable Camera</caption>
                 <description>When false, local video track will not be created when joining the room.</description>
                 <returnType type="Boolean" />
             </property>
 
             <property key="microphoneEnabledExpr" type="expression" required="false">
-                <caption>Microphone available</caption>
+                <caption>Enable Microphone</caption>
                 <description>When false, local audio track will not be created when joining the room.</description>
                 <returnType type="Boolean" />
+            </property>
+            <property key="participantSide" type="enumeration" required="true" defaultValue="customer">
+                <caption>Participant side</caption>
+                <description>Defines whether this widget instance is used by customer or agent.</description>
+                <enumerationValues>
+                    <enumerationValue key="customer">Customer</enumerationValue>
+                    <enumerationValue key="agent">Agent</enumerationValue>
+                </enumerationValues>
             </property>
         </propertyGroup>
         <propertyGroup caption="Authentication">
@@ -57,50 +65,20 @@
                 <description>Optional CSS selector. If not empty, will redirect local camera preview into this element.
                 Otherwise, will render it into this widget content (div.local-media).</description>
             </property>
-        </propertyGroup>
-        <propertyGroup caption="Events">
-
-            <property key="onConnectedAction" type="action" required="false">
-                <caption>On connected</caption>
-                <description>Executed after successfully joining the Twilio room.</description>
-            </property>
-
-            <property key="onDisconnectedAction" type="action" required="false">
-                <caption>On disconnected</caption>
-                <description>Executed after leaving the Twilio room.</description>
-            </property>
             
-            <property key="onParticipantConnectedAction" type="action" required="false">
-                <caption>On participant connected</caption>
-                <description>Executed when a remote participant joins the room.</description>
+            <property key="videoWidth" type="integer" required="true" defaultValue="640">
+                <caption>Video width</caption>
+                <description>Requested camera video width for customer local video track.</description>
             </property>
 
-            <property key="onParticipantDisconnectedAction" type="action" required="false">
-                <caption>On participant disconnected</caption>
-                <description>Executed when a remote participant leaves the room.</description>
+            <property key="videoHeight" type="integer" required="true" defaultValue="480">
+                <caption>Video height</caption>
+                <description>Requested camera video height for customer local video track.</description>
             </property>
-            <property key="onErrorAction" type="action" required="false">
-                <caption>On error</caption>
-                <description>Executed when a Twilio connection or media error occurs.</description>
-            </property>
-            <property key="onFocusLostAction" type="action" required="false">
-                <caption>On focus lost</caption>
-                <description>Executed when the browser tab/window loses focus or becomes hidden.</description>
-            </property>
-            <property key="onFocusReturnedAction" type="action" required="false">
-                <caption>On focus returned</caption>
-                <description>Executed when the browser tab/window becomes active again.</description>
-            </property>
+        
         </propertyGroup>
         <propertyGroup caption="Generic event">
-            <property key="participantSide" type="enumeration" required="true" defaultValue="customer">
-                <caption>Participant side</caption>
-                <description>Defines whether this widget instance is used by customer or agent.</description>
-                <enumerationValues>
-                    <enumerationValue key="customer">Customer</enumerationValue>
-                    <enumerationValue key="agent">Agent</enumerationValue>
-                </enumerationValues>
-            </property>
+
 
             <property key="eventJsonAttribute" type="attribute" required="false">
                 <caption>Event JSON attribute</caption>
@@ -127,34 +105,124 @@
                 Otherwise, will render it into this widget content (div.log).</description>
             </property>
         </propertyGroup>
-        <propertyGroup caption="About / Diagnostics">
-                <property key="showDiagnostics" type="boolean" required="true" defaultValue="false">
-                    <caption>Show diagnostics panel</caption>
-                    <description>
-                        Shows widget version, Twilio SDK version, browser information and connection state.
-                    </description>
-                </property>
-
-                <property key="showFeatureList" type="boolean" required="true" defaultValue="false">
-                    <caption>Show feature list</caption>
-                    <description>
-                        Shows the list of enterprise features supported by this widget version.
-                    </description>
-                </property>
-
-            <property key="aboutWidgetVersion" type="string" required="true" defaultValue="1.1.1">
-                <caption>Widget version</caption>
-                <description>Current widget package version. Do not change manually.</description>
+        <propertyGroup caption="Localization">
+            <property key="captionSessionDisconnected" type="string" required="true" defaultValue="Session: Disconnected">
+                <caption>Disconnected Status Text</caption>
+                <description>Text displayed when the call is disconnected.</description>
             </property>
-
-            <property key="aboutTwilioSdkVersion" type="string" required="true" defaultValue="2.1.0">
-                <caption>Twilio Video SDK version</caption>
-                <description>Twilio Video JavaScript SDK version used by this widget.</description>
+            <property key="captionSessionConnecting" type="string" required="true" defaultValue="Session: Connecting...">
+                <caption>Connecting Status Text</caption>
+                <description>Text displayed while initializing the connection handshake.</description>
             </property>
+            <property key="captionSessionConnected" type="string" required="true" defaultValue="Room Session Active">
+                <caption>Connected Status Text</caption>
+                <description>Text displayed when successfully inside a live room.</description>
+            </property>
+            <property key="captionDisconnectCall" type="string" required="true" defaultValue="Disconnect Verification Call">
+                <caption>Disconnect Button Text</caption>
+                <description>Label for the customer's disconnect action button.</description>
+            </property>
+            <property key="captionReconnectCall" type="string" required="true" defaultValue="Reconnect Verification Session">
+                <caption>Reconnect Button Text</caption>
+                <description>Label for the customer's reconnect action button.</description>
+            </property>
+            <property key="captionMicActive" type="string" required="true" defaultValue="Mic Active">
+                <caption>Mic Active Badge</caption>
+                <description>Passive badge description text indicating live audio capture.</description>
+            </property>
+            <property key="captionMicMuted" type="string" required="true" defaultValue="Mic Muted">
+                <caption>Mic Muted Badge</caption>
+                <description>Passive badge description text indicating muted audio stream.</description>
+            </property>
+            <property key="captionCamActive" type="string" required="true" defaultValue="Camera Active">
+                <caption>Camera Active Badge</caption>
+                <description>Passive badge description text indicating live video capture.</description>
+            </property>
+            <property key="captionCamOff" type="string" required="true" defaultValue="Camera Off">
+                <caption>Camera Off Badge</caption>
+                <description>Passive badge description text indicating stopped camera streaming.</description>
+            </property>
+        </propertyGroup>
+        <propertyGroup caption="Action Panel">
+                <property key="agentShowDashboardPanel" type="expression" required="true" defaultValue="true">
+                    <caption>Display Control Panel Dashboard</caption>
+                    <description>Points to an NPE boolean attribute (e.g., $currentObject/ShowDashboardPanel) controlling the lower administrative bar.</description>
+                    <returnType type="Boolean"/>
+                </property>
+                <property key="agentEnableHardwareToggles" type="expression" required="true" defaultValue="true">
+                    <caption>Enable Mic / Cam Remote Toggles</caption>
+                    <description>Points to an NPE boolean attribute controlling visibility of hardware overrides buttons.</description>
+                    <returnType type="Boolean"/>
+                </property>
+                <property key="agentEnableForceReconnect" type="expression" required="true" defaultValue="true">
+                    <caption>Enable Force Reconnect Button</caption>
+                    <description>Points to an NPE boolean attribute controlling the visibility of the 'Force Customer Reconnect' utility button.</description>
+                    <returnType type="Boolean"/>
+                </property>
+                <property key="agentEnableSnapshotBtn" type="expression" required="true" defaultValue="true">
+                    <caption>Enable Take Snapshot Button</caption>
+                    <description>Points to an NPE boolean attribute controlling the visibility of the 'Take Verification Snapshot' button.</description>
+                    <returnType type="Boolean"/>
+                </property>
+                <property key="agentEnableTerminateBtn" type="expression" required="true" defaultValue="true">
+                    <caption>Enable Close All Rooms Button</caption>
+                    <description>Points to an NPE boolean attribute controlling the visibility of the 'Close All Rooms' session termination button.</description>
+                    <returnType type="Boolean"/>
+                </property>
+            </propertyGroup>
+        <propertyGroup caption="About / Diagnostics (v1.4.0)">
+            <property key="showDiagnostics"
+                    type="boolean"
+                    required="true"
+                    defaultValue="false">
 
-            <property key="aboutFeatureList" type="string" required="true" defaultValue="Generic Event Framework; Device Validation; Connection Lifecycle Protection; Participant Tracking; Focus Monitoring; Production Diagnostics Panel">
-                <caption>Feature list</caption>
-                <description>Current supported enterprise features in this widget version.</description>
+                <caption>Show diagnostics panel</caption>
+
+                <description>
+                    Displays runtime diagnostics.
+
+                    Current Widget Version: 1.4.0
+                    Twilio SDK Version: 2.1.0
+
+                    Enterprise Features:
+                    • Generic Event Framework
+                    • Device Validation
+                    • Connection Lifecycle Protection
+                    • Participant Tracking
+                    • Focus Monitoring
+                    • Production Diagnostics Panel
+                    • Improved Local Track Cleanup
+                    • Reconnect Stability
+                    • Agent Join Without Media Devices
+                    • Configurable Video Resolution
+                </description>
+
+            </property>
+            <property key="showFeatureList"
+                    type="boolean"
+                    required="true"
+                    defaultValue="false">
+
+                <caption>Show feature list</caption>
+
+                <description>
+                    Shows the runtime feature list inside the widget.
+
+                    Release: v1.4.0
+
+                    Features:
+                    • Generic Event Framework
+                    • Device Validation
+                    • Connection Lifecycle Protection
+                    • Participant Tracking
+                    • Focus Monitoring
+                    • Production Diagnostics Panel
+                    • Improved Local Track Cleanup
+                    • Reconnect Stability
+                    • Agent Join Without Media Devices
+                    • Configurable Video Resolution
+                </description>
+
             </property>
         </propertyGroup>
     </properties>

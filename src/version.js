@@ -1,4 +1,5 @@
-export const WIDGET_VERSION = "1.2.0";
+export const WIDGET_VERSION = "1.4.1";
+export const TWILIO_SDK_VERSION = "2.1.0";
 
 export const WIDGET_FEATURES = [
   "Generic Event Framework",
@@ -6,5 +7,9 @@ export const WIDGET_FEATURES = [
   "Connection Lifecycle Protection",
   "Participant Tracking",
   "Focus Monitoring",
-  "Production Diagnostics Panel"
+  "Production Diagnostics Panel",
+  "Improved Local Track Cleanup",
+  "Reconnect Stability",
+  "Agent Join Without Media Devices",
+  "Configurable Video Resolution"
 ];
